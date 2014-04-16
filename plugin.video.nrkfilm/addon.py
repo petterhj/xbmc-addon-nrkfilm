@@ -25,8 +25,8 @@ def index():
         'thumbnail':    film['tmdb']['poster'] if film['tmdb'] else film['nrk']['poster'],
         'label':        film['tmdb']['original_title'] if film['tmdb'] else film['nrk']['original_title'] or film['nrk']['title'],
         'info': {
-            'title':        film['tmdb']['title'] if film['tmdb'] else nrk['nrk']['title'],
-            'originaltitle':film['tmdb']['original_title'] if film['tmdb'] else nrk['nrk']['original_title'] or film['tmdb']['title'] or nrk['nrk']['title'],
+            'title':        film['tmdb']['title'] if film['tmdb'] else film['nrk']['title'],
+            'originaltitle':film['tmdb']['original_title'] if film['tmdb'] else film['nrk']['original_title'] or film['tmdb']['title'] or film['nrk']['title'],
             'year':         film['tmdb']['year'] if film['tmdb'] else film['nrk']['year'],
             'genre':        ', '.join(film['tmdb']['genre']),
             'rating':       10
