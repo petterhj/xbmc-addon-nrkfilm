@@ -1,7 +1,7 @@
 # Imports
-import nrkfilm
-
 from xbmcswift2 import xbmc, xbmcgui, Plugin
+
+from resources.lib.nrkfilm import nrkfilm
 
 
 # Plugin
@@ -15,25 +15,39 @@ def index():
 	plugin.set_content('movies')
 
 	# Get diary
-	films = nrkfilm.get_films()
+	cache = plugin.storage_path + 'cache'
+
+	films = nrkfilm.NRKFilm(cache).feature_films()
 
 	print films
 	
 	items = [{
-		'icon':			films[id]['tmdb']['poster'],
-		'thumbnail': 	films[id]['tmdb']['poster'],
-		'label':		films[id]['tmdb']['original_title'] or films[id]['nrk']['original_title'] or films[id]['nrk']['title'],
+		'icon':			film['tmdb']['poster'] or film['nrk']['poster'],
+		'thumbnail': 	film['tmdb']['poster'] or film['nrk']['poster'],
+		'label':		film['tmdb']['original_title'] or film['nrk']['original_title'] or film['nrk']['title'],
 		'info': {
-			'genre': 		'Genres',
+			'title':		film['tmdb']['title'] or nrk['nrk']['title']
+			'originaltitle':film['tmdb']['original_title'] or nrk['nrk']['original_title'] or film['tmdb']['title'] or nrk['nrk']['title'],
+			'year':			film['tmdb']['year'] or film['nrk']['year'],
+			'genre': 		', '.join(film['tmdb']['genre']),
 			'rating': 		10
 		},
-		'path':			films[id]['nrk']['media_url']
-	} for id in films]
+		'path':			film['nrk']['stream'] if not _isDebug() else plugin.url_for('index')
+	} for film in films]
 		
 	
 	# Return
 	return items
 
+
+# Debug
+def _isDebug():
+	try:
+		import xbmc
+	except ImportError:
+		return True
+	else:
+		return False
 
 # Main
 if __name__ == '__main__':
