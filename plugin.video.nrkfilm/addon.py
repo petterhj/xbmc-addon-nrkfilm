@@ -57,7 +57,7 @@ def index():
             },
             'properties': {
                 'Fanart_Image': film['tmdb']['fanart'] if film['tmdb'] else nrk['fanart'],
-            }
+            },
             'path':         film['nrk']['stream'] if not _isDebug() else plugin.url_for('index')
         }
         items.append(item)
