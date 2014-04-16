@@ -20,6 +20,7 @@ def index():
     films = nrkfilm.NRKFilm(cache).feature_films()
     
     # Items
+    '''
     items = [{
         'icon':         film['tmdb']['poster'] if film['tmdb'] else film['nrk']['poster'],
         'thumbnail':    film['tmdb']['poster'] if film['tmdb'] else film['nrk']['poster'],
@@ -33,6 +34,13 @@ def index():
         },
         'path':         film['nrk']['stream'] if not _isDebug() else plugin.url_for('index')
     } for film in films]
+    '''
+
+    for f in films:
+        print f
+        print
+
+    items = []
     
     # Return
     return items
