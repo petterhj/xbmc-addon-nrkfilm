@@ -98,10 +98,8 @@ class NRKFilm:
             # Details
             if film:
                 f = self.tmdb.Movies(film['id'])
-                info = f.info() if f.info() else {}
-                credits = f.credits() if f.credits() else {}
-
-                return info, credits
+                
+                return f.info(), f.credits()
 
         return None
 
@@ -142,18 +140,18 @@ class NRKFilm:
                     }
 
                     # TMDB Metadata
-                    info, credits = self.get_tmdb_data(meta_nrk['title'], meta_nrk['original_title'], meta_nrk['year'])
+                    tinfo, tcredits = self.get_tmdb_data(meta_nrk['title'], meta_nrk['original_title'], meta_nrk['year'])
 
                     meta_tmdb = {
-                        'title':            info['title'] if 'title' in info else None,
-                        'original_title':   info['original_title'] if 'original_title' in info else None,
-                        'year':             info['release_date'].split('-')[0] if 'release_date' in info and info['release_date'] else None,
-                        'description':      info['overview'] if 'overview' in info else None,
-                        'genre':            [g['name'] for g in info['genres']],
-                        'director':         filter(None, [d['name'] if d['job'] == 'Director' else None for d in credits['crew']]),
-                        'writer':           filter(None, [d['name'] if d['job'] == 'Writer' else None for d in credits['crew']]),
-                        'poster':           (URL_POSTER % info['poster_path']) if 'poster_path' in info and info['poster_path'] else None,
-                        'fanart':           (URL_FANART % info['backdrop_path']) if 'backdrop_path' in info and info['backdrop_path'] else None,
+                        'title':            tinfo['title'] if 'title' in tinfo else None,
+                        'original_title':   tinfo['original_title'] if 'original_title' in tinfo else None,
+                        'year':             tinfo['release_date'].split('-')[0] if 'release_date' in tinfo and tinfo['release_date'] else None,
+                        'description':      tinfo['overview'] if 'overview' in tinfo else None,
+                        'genre':            [g['name'] for g in tinfo['genres']],
+                        'director':         filter(None, [d['name'] if d['job'] == 'Director' else None for d in tcredits['crew']]),
+                        'writer':           filter(None, [d['name'] if d['job'] == 'Writer' else None for d in tcredits['crew']]),
+                        'poster':           (URL_POSTER % tinfo['poster_path']) if 'poster_path' in tinfo and tinfo['poster_path'] else None,
+                        'fanart':           (URL_FANART % tinfo['backdrop_path']) if 'backdrop_path' in tinfo and tinfo['backdrop_path'] else None,
                     }
 
 
