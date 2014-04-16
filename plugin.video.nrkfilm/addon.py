@@ -58,7 +58,7 @@ def index():
             'path':         film['nrk']['stream'] if not _isDebug() else plugin.url_for('index')
         }
         items.append(item)
-        print '!!!!!!!!!!! added item ' + film['nrk']['title']
+        #print '!!!!!!!!!!! added item ' + film['nrk']['title']
     
     # Return
     return items
