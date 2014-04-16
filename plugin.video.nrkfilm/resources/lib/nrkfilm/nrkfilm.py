@@ -147,7 +147,7 @@ class NRKFilm:
                         'original_title':   tinfo['original_title'] if 'original_title' in tinfo else None,
                         'year':             tinfo['release_date'].split('-')[0] if 'release_date' in tinfo and tinfo['release_date'] else None,
                         'description':      tinfo['overview'] if 'overview' in tinfo else None,
-                        'genre':            [g['name'] for g in tinfo['genres']],
+                        'genre':            [g['name'] for g in tinfo['genres']] if 'genres' in tinfo else [],
                         'director':         filter(None, [d['name'] if d['job'] == 'Director' else None for d in tcredits['crew']]),
                         'writer':           filter(None, [d['name'] if d['job'] == 'Writer' else None for d in tcredits['crew']]),
                         'poster':           (URL_POSTER % tinfo['poster_path']) if 'poster_path' in tinfo and tinfo['poster_path'] else None,
