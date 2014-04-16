@@ -21,13 +21,13 @@ def index():
     
     # Items
     items = [{
-        'icon':         film['tmdb']['poster'] or film['nrk']['poster'],
-        'thumbnail':    film['tmdb']['poster'] or film['nrk']['poster'],
-        'label':        film['tmdb']['original_title'] or film['nrk']['original_title'] or film['nrk']['title'],
+        'icon':         film['tmdb']['poster'] if film['tmdb'] else film['nrk']['poster'],
+        'thumbnail':    film['tmdb']['poster'] if film['tmdb'] else film['nrk']['poster'],
+        'label':        film['tmdb']['original_title'] if film['tmdb'] else film['nrk']['original_title'] or film['nrk']['title'],
         'info': {
-            'title':        film['tmdb']['title'] or nrk['nrk']['title'],
-            'originaltitle':film['tmdb']['original_title'] or nrk['nrk']['original_title'] or film['tmdb']['title'] or nrk['nrk']['title'],
-            'year':         film['tmdb']['year'] or film['nrk']['year'],
+            'title':        film['tmdb']['title'] if film['tmdb'] else nrk['nrk']['title'],
+            'originaltitle':film['tmdb']['original_title'] if film['tmdb'] else nrk['nrk']['original_title'] or film['tmdb']['title'] or nrk['nrk']['title'],
+            'year':         film['tmdb']['year'] if film['tmdb'] else film['nrk']['year'],
             'genre':        ', '.join(film['tmdb']['genre']),
             'rating':       10
         },

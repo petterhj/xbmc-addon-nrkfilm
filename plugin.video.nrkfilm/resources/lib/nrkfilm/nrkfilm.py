@@ -85,7 +85,7 @@ class NRKFilm:
             film = None
 
             if year:
-                print '  [TMDb]', s['title'], year, s['release_date'] 
+                print '  [TMDb] ' + s['title'] + ', year: ' + year + ', release: ' + s['release_date'] 
                 if year in s['release_date']:
                     film = s
             else:
