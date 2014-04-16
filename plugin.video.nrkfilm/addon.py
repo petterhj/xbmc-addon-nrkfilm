@@ -28,12 +28,11 @@ def index():
             'title':        film['tmdb']['title'] if film['tmdb'] else film['nrk']['title'],
             'originaltitle':film['tmdb']['original_title'] if film['tmdb'] else film['nrk']['original_title'] or film['tmdb']['title'] or film['nrk']['title'],
             'year':         film['tmdb']['year'] if film['tmdb'] else film['nrk']['year'],
-            'genre':        ', '.join(film['tmdb']['genre']),
+            'genre':        ', '.join(film['tmdb']['genre']) if film['tmdb'] else '',
             'rating':       10
         },
         'path':         film['nrk']['stream'] if not _isDebug() else plugin.url_for('index')
     } for film in films]
-        
     
     # Return
     return items

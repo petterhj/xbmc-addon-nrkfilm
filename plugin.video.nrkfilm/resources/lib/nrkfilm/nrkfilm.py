@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Imports
+import sys
 import os
 import re
 import datetime
@@ -10,6 +11,7 @@ import json
 import pickle
 
 from resources.lib.tmdbsimple import TMDB
+#from tmdbsimple import TMDB
 
 
 # Constants
@@ -49,7 +51,7 @@ class NRKFilm:
     # Get media elements (find potential feature films)
     def get_elements(self):
         # Get data
-        print '[NRK] get elements |',
+        print '[NRKFilm] get elements |',
         data = self.tools.get_json(URL_FILMS)
 
         # Elements
@@ -119,7 +121,7 @@ class NRKFilm:
             # Not cached
             else:
                 # Get element info
-                print '[NRK] get element info (' + element + ') |',
+                print '[NRKFilm] get element info (' + element + ') |',
                 info = self.tools.get_json((URL_FILM % element))
                 print 'done'
 
@@ -139,6 +141,11 @@ class NRKFilm:
                     }
 
                     # TMDB Metadata
+                    if meta_nrk['original_title'] == 'Prete-moi ta main':
+                        meta_nrk['original_title'] = 'asdasdasfgsfdasldkfjslkdfjkfksdf'
+                        meta_nrk['title'] = 'asdasdasfgsfdasldkfjslkdfjkfksdf'
+
+
                     tmdb = self.get_tmdb_data(meta_nrk['title'], meta_nrk['original_title'], meta_nrk['year'])
 
                     meta_tmdb = {
@@ -259,7 +266,7 @@ class NRKFilm:
 # TESTING
 #
 if __name__ == '__main__':
-    nrk = NRKFilm('/tmp/cache')
+    nrk = NRKFilm('/tmp/xbmcswift2_debug/cache')
 
     print '-'*100
     print 'NRK tests'
@@ -281,14 +288,15 @@ if __name__ == '__main__':
         print '  > Duration:\t', film['nrk']['duration']
         print '  > Expires:\t', film['nrk']['expires']
         print
-        print '  > Title:\t', film['tmdb']['title']
-        print '  > Org.Title:\t', film['tmdb']['original_title']
-        print '  > Year:\t', film['tmdb']['year']
-        print '  > Plot:\t', film['tmdb']['description'][0:75], '...'
-        print '  > Genre:\t', film['tmdb']['genre']
-        print '  > Director:\t', film['tmdb']['director']
-        print '  > Writer:\t', film['tmdb']['writer']
-        print '  > Poster:\t', film['tmdb']['poster']
-        print '  > Fanart:\t', film['tmdb']['fanart']
-        print
+        if film['tmdb']:
+            print '  > Title:\t', film['tmdb']['title']
+            print '  > Org.Title:\t', film['tmdb']['original_title']
+            print '  > Year:\t', film['tmdb']['year']
+            print '  > Plot:\t', film['tmdb']['description'][0:75], '...'
+            print '  > Genre:\t', film['tmdb']['genre']
+            print '  > Director:\t', film['tmdb']['director']
+            print '  > Writer:\t', film['tmdb']['writer']
+            print '  > Poster:\t', film['tmdb']['poster']
+            print '  > Fanart:\t', film['tmdb']['fanart']
+            print
     print
