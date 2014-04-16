@@ -98,11 +98,10 @@ class NRKFilm:
             # Details
             if film:
                 f = self.tmdb.Movies(film['id'])
-                
-                return {
-                    'info': f.info(), 
-                    'credits': f.credits()
-                }
+                info = f.info() if f.info() else {}
+                credits = f.credits() if f.credits() else {}
+
+                return info, credits
 
         return None
 
@@ -134,7 +133,7 @@ class NRKFilm:
                         'title':            self.tools.clean_title(info['title']),
                         'original_title':   self.tools.find_org_title(info['description']),
                         'year':             self.tools.find_year(info['description']),
-                        'description':      info['description'].replace('\n', '').replace('\r', '. '),
+                        'description':      info['description'].replace('\n', '').replace('\r', '.').replace('..', '. '),
                         'poster':           None,
                         'fanart':           info['images']['webImages'][2]['imageUrl'] or info['images']['webImages'][1]['imageUrl'] or info['images']['webImages'][0]['imageUrl'],
                         'stream':           info['mediaUrl'],
@@ -143,19 +142,19 @@ class NRKFilm:
                     }
 
                     # TMDB Metadata
-                    tmdb = self.get_tmdb_data(meta_nrk['title'], meta_nrk['original_title'], meta_nrk['year'])
+                    info, credits = self.get_tmdb_data(meta_nrk['title'], meta_nrk['original_title'], meta_nrk['year'])
 
                     meta_tmdb = {
-                        'title':            tmdb['info']['title'],
-                        'original_title':   tmdb['info']['original_title'],
-                        'year':             tmdb['info']['release_date'].split('-')[0],
-                        'description':      tmdb['info']['overview'],
-                        'genre':            [g['name'] for g in tmdb['info']['genres']],
-                        'director':         filter(None, [d['name'] if d['job'] == 'Director' else None for d in tmdb['credits']['crew']]),
-                        'writer':           filter(None, [d['name'] if d['job'] == 'Writer' else None for d in tmdb['credits']['crew']]),
-                        'poster':           (URL_POSTER % tmdb['info']['poster_path']),
-                        'fanart':           (URL_FANART % tmdb['info']['backdrop_path']),
-                    } if tmdb else None
+                        'title':            info['title'] if 'title' in info else None,
+                        'original_title':   info['original_title'] if 'original_title' in info else None,
+                        'year':             info['release_date'].split('-')[0] if 'release_date' in info and info['release_date'] else None,
+                        'description':      info['overview'] if 'overview' in info else None,
+                        'genre':            [g['name'] for g in info['genres']],
+                        'director':         filter(None, [d['name'] if d['job'] == 'Director' else None for d in credits['crew']]),
+                        'writer':           filter(None, [d['name'] if d['job'] == 'Writer' else None for d in credits['crew']]),
+                        'poster':           (URL_POSTER % info['poster_path']) if 'poster_path' in info and info['poster_path'] else None,
+                        'fanart':           (URL_FANART % info['backdrop_path']) if 'backdrop_path' in info and info['backdrop_path'] else None,
+                    }
 
 
                     # Film
@@ -276,9 +275,11 @@ if __name__ == '__main__':
 
     for film in nrk.feature_films():
         print '*', film['nrk']['title']
-        print '  > Title:\t', film['nrk']['original_title']
+        print '-'*50
+        print '  > Title:\t', film['nrk']['title']
+        print '  > Org.Title:\t', film['nrk']['original_title']
         print '  > Year:\t', film['nrk']['year']
-        print '  > Plot:\t', film['nrk']['description'][0:75], '...'
+        print '  > Plot:\t', film['nrk']['description']
         print '  > Poster:\t', film['nrk']['poster']
         print '  > Fanart:\t', film['nrk']['fanart']
         print '  > Stream:\t', film['nrk']['stream'][0:50], '...'
@@ -286,11 +287,10 @@ if __name__ == '__main__':
         print '  > Expires:\t', film['nrk']['expires']
         print
         if film['tmdb']:
-            print film['tmdb']
             print '  > Title:\t', film['tmdb']['title']
             print '  > Org.Title:\t', film['tmdb']['original_title']
             print '  > Year:\t', film['tmdb']['year']
-            print '  > Plot:\t', film['tmdb']['description'][0:75] if film['tmdb']['description'] else '', '...'
+            print '  > Plot:\t', film['tmdb']['description']
             print '  > Genre:\t', film['tmdb']['genre']
             print '  > Director:\t', film['tmdb']['director']
             print '  > Writer:\t', film['tmdb']['writer']
