@@ -19,7 +19,7 @@ def index():
     plugin.set_content('movies')
 
     # Get feature films
-    cache = plugin.storage_path + 'cache'
+    cache = plugin.storage_path + 'cache' if not _isDebug() else '/tmp/cache'
 
     films = nrkfilm.NRKFilm(cache).feature_films()
     

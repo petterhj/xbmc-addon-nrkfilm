@@ -10,8 +10,10 @@ import requests
 import json
 import pickle
 
-from resources.lib.tmdbsimple import TMDB
-#from tmdbsimple import TMDB
+if __name__ == '__main__':
+    from tmdbsimple import TMDB
+else:
+    from resources.lib.tmdbsimple import TMDB
 
 
 # Constants
@@ -261,7 +263,7 @@ class NRKFilm:
 # TESTING
 #
 if __name__ == '__main__':
-    nrk = NRKFilm('/tmp/xbmcswift2_debug/cache')
+    nrk = NRKFilm('/tmp/cache')
 
     print '-'*100
     print 'NRK tests'
@@ -284,10 +286,11 @@ if __name__ == '__main__':
         print '  > Expires:\t', film['nrk']['expires']
         print
         if film['tmdb']:
+            print film['tmdb']
             print '  > Title:\t', film['tmdb']['title']
             print '  > Org.Title:\t', film['tmdb']['original_title']
             print '  > Year:\t', film['tmdb']['year']
-            print '  > Plot:\t', film['tmdb']['description'][0:75], '...'
+            print '  > Plot:\t', film['tmdb']['description'][0:75] if film['tmdb']['description'] else '', '...'
             print '  > Genre:\t', film['tmdb']['genre']
             print '  > Director:\t', film['tmdb']['director']
             print '  > Writer:\t', film['tmdb']['writer']
