@@ -71,7 +71,7 @@ class NRKFilm:
                     elements.append(eid)
 
         # Return
-        print 'done (found', len(elements), 'possible feature films)'
+        print 'done (found', len(elements), 'possible feature films,', len(self.cache.films.keys()), 'in cache)'
         return elements
 
 
@@ -141,11 +141,6 @@ class NRKFilm:
                     }
 
                     # TMDB Metadata
-                    if meta_nrk['original_title'] == 'Prete-moi ta main':
-                        meta_nrk['original_title'] = 'asdasdasfgsfdasldkfjslkdfjkfksdf'
-                        meta_nrk['title'] = 'asdasdasfgsfdasldkfjslkdfjkfksdf'
-
-
                     tmdb = self.get_tmdb_data(meta_nrk['title'], meta_nrk['original_title'], meta_nrk['year'])
 
                     meta_tmdb = {

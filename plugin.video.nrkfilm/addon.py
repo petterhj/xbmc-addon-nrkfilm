@@ -36,11 +36,24 @@ def index():
     } for film in films]
     '''
 
-    for f in films:
-        print f
-        print
-
     items = []
+
+    for film in films:
+        item = {
+            'icon':         film['tmdb']['poster'] if film['tmdb'] else film['nrk']['poster'],
+            'thumbnail':    film['tmdb']['poster'] if film['tmdb'] else film['nrk']['poster'],
+            'label':        film['tmdb']['original_title'] if film['tmdb'] else film['nrk']['original_title'] or film['nrk']['title'],
+            'info': {
+                'title':        film['tmdb']['title'] if film['tmdb'] else film['nrk']['title'],
+                'originaltitle':film['tmdb']['original_title'] if film['tmdb'] else film['nrk']['original_title'] or film['tmdb']['title'] or film['nrk']['title'],
+                'year':         film['tmdb']['year'] if film['tmdb'] else film['nrk']['year'],
+                'genre':        ', '.join(film['tmdb']['genre']) if film['tmdb'] else '',
+                'rating':       10
+            },
+            'path':         film['nrk']['stream'] if not _isDebug() else plugin.url_for('index')
+        }
+        items.append(item)
+        print '!!!!!!!!!!! added item ' + film['nrk']['title']
     
     # Return
     return items
