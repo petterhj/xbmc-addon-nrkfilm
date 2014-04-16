@@ -101,7 +101,7 @@ class NRKFilm:
                 
                 return f.info(), f.credits()
 
-        return None
+        return None, None
 
 
     # Get films

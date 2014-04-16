@@ -1,3 +1,4 @@
+'''
 from resources.lib.nrkfilm import nrkfilm
 
 nrk = nrkfilm.NRKFilm('/tmp/cache2')
@@ -19,3 +20,39 @@ meta_nrk = {
 #info, credits = nrk.get_tmdb_data(meta_nrk['title'], meta_nrk['original_title'], meta_nrk['year'])
 
 #print info
+'''
+
+import requests
+import json
+
+from resources.lib.tmdbsimple import TMDB
+
+tmdb = TMDB('8cca874e1c98f99621d8200be1b16bd0')
+
+def get_tmdb_data(title, original_title, year):
+    # Search
+    query = original_title or title
+
+    search = tmdb.Search()
+    response = search.movie({'query': query})
+
+    for s in search.results:
+        film = None
+
+        if year:
+            print '  [TMDb] ' + s['title'] + ', year: ' + year + ', release: ' + s['release_date'] 
+            if year in s['release_date']:
+                film = s
+        else:
+            film = s
+
+        # Details
+        if film:
+            f = tmdb.Movies(film['id'])
+            
+            return f.info(), f.credits()
+
+    return None
+
+
+print get_tmdb_data('Med Grimm og Gru', None, '1976')
