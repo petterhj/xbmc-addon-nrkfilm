@@ -52,7 +52,7 @@ def get_tmdb_data(title, original_title, year):
             
             return f.info(), f.credits()
 
-    return None
+    return {}, {}
 
 
 print get_tmdb_data('Med Grimm og Gru', None, '1976')
