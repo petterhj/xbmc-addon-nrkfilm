@@ -142,16 +142,16 @@ class NRKFilm:
                     tmdb = self.get_tmdb_data(meta_nrk['title'], meta_nrk['original_title'], meta_nrk['year'])
 
                     meta_tmdb = {
-                        'title':            tmdb['info']['title'] or None,
-                        'original_title':   tmdb['info']['original_title'] or None,
-                        'year':             tmdb['info']['release_date'].split('-')[0] or None,
-                        'description':      tmdb['info']['overview'] or None,
+                        'title':            tmdb['info']['title'],
+                        'original_title':   tmdb['info']['original_title'],
+                        'year':             tmdb['info']['release_date'].split('-')[0],
+                        'description':      tmdb['info']['overview'],
                         'genre':            [g['name'] for g in tmdb['info']['genres']],
                         'director':         filter(None, [d['name'] if d['job'] == 'Director' else None for d in tmdb['credits']['crew']]),
                         'writer':           filter(None, [d['name'] if d['job'] == 'Writer' else None for d in tmdb['credits']['crew']]),
-                        'poster':           (URL_POSTER % tmdb['info']['poster_path']) or None,
-                        'fanart':           (URL_FANART % tmdb['info']['backdrop_path']) or None,
-                    }
+                        'poster':           (URL_POSTER % tmdb['info']['poster_path']),
+                        'fanart':           (URL_FANART % tmdb['info']['backdrop_path']),
+                    } if tmdb else None
 
 
                     # Film
@@ -259,7 +259,7 @@ class NRKFilm:
 # TESTING
 #
 if __name__ == '__main__':
-    nrk = NRKFilm()
+    nrk = NRKFilm('/tmp/cache')
 
     print '-'*100
     print 'NRK tests'
