@@ -1,3 +1,7 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+
 # Imports
 from xbmcswift2 import xbmc, xbmcgui, Plugin
 
