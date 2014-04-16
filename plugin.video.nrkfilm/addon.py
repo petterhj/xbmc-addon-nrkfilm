@@ -35,6 +35,8 @@ def index():
             'plotoutline':  film['tmdb']['description'] or film['nrk']['description'] or '',
             'year':         film['tmdb']['year'] or film['nrk']['year'] or 0,
             'genre':        ', '.join(film['tmdb']['genre']),
+            'director':     film['tmdb']['director'][0] if len(film['tmdb']['director']) > 0 else '',
+            'writer':       film['tmdb']['writer'][0] if len(film['tmdb']['writer']) > 0 else '',
             'cast':         film['tmdb']['cast'],
             'rating':       10
         },
