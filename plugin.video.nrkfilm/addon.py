@@ -12,46 +12,6 @@ from resources.lib.nrkfilm import nrkfilm
 plugin = Plugin()
 
 
-# Generate list item
-def listitem(film):
-    print film 
-    # Info
-    poster  = film['tmdb']['poster'] or film['nrk']['poster'] or film['nrk']['fanart'] or ''
-    fanart  = film['tmdb']['fanart'] or film['nrk']['fanart'] or ''
-    title   = film['tmdb']['title'] or film['nrk']['title'] or ''
-    otitle  = film['tmdb']['original_title'] or film['nrk']['original_title'] or title
-    plot    = film['tmdb']['description'] or film['nrk']['description'] or ''
-    year    = film['tmdb']['year'] or film['nrk']['year'] or 0
-    genre   = ', '.join(film['tmdb']['genre'])
-    cast    = []
-    rating  = 10
-
-    stream  = film['nrk']['stream'] if not _isDebug() else plugin.url_for('index')
-
-    # Item
-    item = {
-        'icon':         poster,
-        'thumbnail':    poster,
-        'label':        title,
-        'info': {
-            'title':        title,
-            'originaltitle':otitle,
-            'plot':         plot,
-            'plotoutline':  plot,
-            'year':         year,
-            'genre':        genre,
-            'cast':         cast,
-            'rating':       rating
-        },
-        'properties': {
-            'fanart_image': fanart,
-        },
-        'path':         stream
-    }
-
-    return item
-
-
 # Films
 @plugin.route('/')
 def index():
@@ -64,7 +24,25 @@ def index():
     films = nrkfilm.NRKFilm(cache).feature_films()
     
     # Items
-    items = [listitem(film) for film in films]
+    items = [{
+        'icon':         film['tmdb']['poster'] or film['nrk']['poster'] or film['nrk']['fanart'] or '',
+        'thumbnail':    film['tmdb']['poster'] or film['nrk']['poster'] or film['nrk']['fanart'] or '',
+        'label':        film['tmdb']['title'] or film['nrk']['title'] or '',
+        'info': {
+            'title':        film['tmdb']['title'] or film['nrk']['title'] or '',
+            'originaltitle':film['tmdb']['original_title'] or film['nrk']['original_title'] or film['tmdb']['title'] or film['nrk']['title'] or '',
+            'plot':         film['tmdb']['description'] or film['nrk']['description'] or '',
+            'plotoutline':  film['tmdb']['description'] or film['nrk']['description'] or '',
+            'year':         film['tmdb']['year'] or film['nrk']['year'] or 0,
+            'genre':        ', '.join(film['tmdb']['genre']),
+            'cast':         film['tmdb']['cast'],
+            'rating':       10
+        },
+        'properties': {
+            'fanart_image': film['tmdb']['fanart'] or film['nrk']['fanart'] or '',
+        },
+        'path':         film['nrk']['stream'] if not _isDebug() else plugin.url_for('index')
+    } for film in films]
     
     # Return
     return items

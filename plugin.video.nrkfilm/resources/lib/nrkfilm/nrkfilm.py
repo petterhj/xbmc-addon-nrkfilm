@@ -150,6 +150,7 @@ class NRKFilm:
                         'genre':            [g['name'] for g in tinfo['genres']] if 'genres' in tinfo else [],
                         'director':         filter(None, [d['name'] if d['job'] == 'Director' else None for d in tcredits['crew']]) if 'crew' in tcredits else [],
                         'writer':           filter(None, [d['name'] if d['job'] == 'Writer' else None for d in tcredits['crew']]) if 'crew' in tcredits else [],
+                        'cast':             filter(None, [d['name'] for d in tcredits['cast']]) if 'cast' in tcredits else [],
                         'poster':           (URL_POSTER % tinfo['poster_path']) if 'poster_path' in tinfo and tinfo['poster_path'] else None,
                         'fanart':           (URL_FANART % tinfo['backdrop_path']) if 'backdrop_path' in tinfo and tinfo['backdrop_path'] else None,
                     }
