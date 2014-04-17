@@ -57,7 +57,7 @@ class Logging:
         out  = HEADER + '[NRKFilm] ' + ENDC
         out += string.replace('[DONE]', okblue).replace('[SUCCESS]', okgreen).replace('[FAIL]', failred).replace('[START]', warning)
 
-        print out
+        print out.encode('utf-8')
 
 
 # 
