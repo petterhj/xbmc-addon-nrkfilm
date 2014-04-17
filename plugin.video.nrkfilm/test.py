@@ -1,63 +1,13 @@
-'''
-from resources.lib.nrkfilm import nrkfilm
-
-nrk = nrkfilm.NRKFilm('/tmp/cache2')
-
-info = nrk.tools.get_json('http://v7.psapi.nrk.no/mediaelement/fbua61001682')
-print info
-meta_nrk = {
-    'title':            nrk.tools.clean_title(info['title']),
-    'original_title':   nrk.tools.find_org_title(info['description']),
-    'year':             nrk.tools.find_year(info['description']),
-    'description':      info['description'].replace('\n', '').replace('\r', '.').replace('..', '. '),
-    'poster':           None,
-    'fanart':           info['images']['webImages'][2]['imageUrl'] or info['images']['webImages'][1]['imageUrl'] or info['images']['webImages'][0]['imageUrl'],
-    'stream':           info['mediaUrl'],
-    'duration':         (int(info['convivaStatistics']['contentLength']) / 60),
-    'expires':          re.search('\(([0-9]{10})', info['usageRights']['availableTo']).group(1),
-}
-
-#info, credits = nrk.get_tmdb_data(meta_nrk['title'], meta_nrk['original_title'], meta_nrk['year'])
-
-#print info
-'''
-
 import requests
 import json
 
-from resources.lib.tmdbsimple import TMDB
 
-tmdb = TMDB('8cca874e1c98f99621d8200be1b16bd0')
+session = requests.session()
+session.headers['User-Agent'] = 'xbmc.org'
+#session.headers['X-Requested-With'] = 'XMLHttpRequest'
+session.headers['Cookie'] = "NRK_PLAYER_SETTINGS_TV=devicetype=desktop&preferred-player-odm=hlslink&preferred-player-live=hlslink"
 
-def get_tmdb_data(title, original_title, year):
-    # Search
-    query = original_title or title
-
-    search = tmdb.Search()
-    response = search.movie({'query': query})
-    print search.results
-    for s in search.results:
-        film = None
-
-        if year:
-            if year in s['release_date']:
-                film = s
-            else:
-                if (title.lower() == s['title'].lower()) or (original_title.lower() == s['original_title'].lower()):
-                    film = s
-
-        else:
-            film = s
-
-        # Details
-        if film:
-            f = tmdb.Movies(film['id'])
-            
-            print '  [TMDb] ' + film['title'] + ', year: ' + year + ', release: ' + film['release_date'] 
-
-            return f.info(), f.credits()
-
-    return {}, {}
-
-
-print get_tmdb_data('Too Big To Fail', None, '2008')
+url = 'http://v7.psapi.nrk.no/mediaelement/koif40003408'
+  
+print session.get(url).json()['mediaUrl']
+print requests.get(url).json()['mediaUrl']

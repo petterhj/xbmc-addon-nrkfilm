@@ -17,16 +17,20 @@ else:
     from resources.lib.tmdbsimple import TMDB
 
 
-# Constants
+# NRK
 URL_FILMS   = 'http://tv.nrk.no/listobjects/indexelements/filmer-og-serier/page/0'
 URL_FILM    = 'http://v7.psapi.nrk.no/mediaelement/%s'
+USER_AGENT  = 'xbmc.org'
+COOKIES     = 'NRK_PLAYER_SETTINGS_TV=devicetype=desktop&preferred-player-odm=hlslink&preferred-player-live=hlslink'
+FILTERS     = ['kortfilm', 'fjernsynsteatret']
+CLEAN_TITLE = ['Film:', 'Filmklassiker:']
+MIN_LENGTH  = 3600
+
+# TMDB
 URL_IMAGE   = 'http://image.tmdb.org/t/p/'
 URL_POSTER  = URL_IMAGE + 'w500%s'
 URL_FANART  = URL_IMAGE + 'w1280%s'
 TMDB_KEY    = '8cca874e1c98f99621d8200be1b16bd0'
-FILTERS     = ['kortfilm', 'fjernsynsteatret']
-CLEAN_TITLE = ['Film:', 'Filmklassiker:']
-MIN_LENGTH  = 3600
 
 
 # 
@@ -35,6 +39,11 @@ MIN_LENGTH  = 3600
 class NRKFilm:
     # Init
     def __init__(self, cache_file):
+        # Session
+        self.session = requests.session()
+        self.session.headers['User-Agent'] = USER_AGENT
+        self.session.headers['Cookie'] = COOKIES
+
         # TMDb
         self.tmdb = TMDB(TMDB_KEY)
 
@@ -54,8 +63,8 @@ class NRKFilm:
     # Get media elements (find potential feature films)
     def get_elements(self):
         # Get data
-        print '[NRKFilm] get elements |',
-        data = self.tools.get_json(URL_FILMS)
+        print '[NRKFilm] Get elements'
+        data = self.tools.get_json(URL_FILMS, self.session)
 
         # Elements
         elements = []
@@ -74,7 +83,7 @@ class NRKFilm:
                     elements.append(eid)
 
         # Return
-        print 'done (found', len(elements), 'possible feature films,', len(self.cache.films.keys()), 'in cache)'
+        print '  [DONE] Found ' + len(elements) + ' possible feature films (' + len(self.cache.films.keys()) + ' alredy in cache)'
         return elements
 
 
@@ -101,8 +110,6 @@ class NRKFilm:
             # Details
             if film:
                 f = self.tmdb.Movies(film['id'])
-                
-                print '  [TMDb] ' + film['title'] + ', year: ' + year + ', release: ' + film['release_date'] 
 
                 return f.info(), f.credits()
 
@@ -125,9 +132,11 @@ class NRKFilm:
             # Not cached
             else:
                 # Get element info
-                print '[NRKFilm] get element info (' + element + ') |',
-                info = self.tools.get_json((URL_FILM % element))
-                print 'done'
+                print '[NRKFilm] Get element info (' + element + ')'
+                info = self.tools.get_json((URL_FILM % element), self.session)
+                print '  [DONE] Found ' + self.tools.clean_title(info['title'])
+                print '    [AVAILABLE] ' + info['isAvailable']
+                print '    [DURATION] ' + info['convivaStatistics']['contentLength'] + ' (accepted: ' + int(info['convivaStatistics']['contentLength']) > MIN_LENGTH
 
                 # Check if avialable and of feature length
                 if info['isAvailable'] and int(info['convivaStatistics']['contentLength']) > MIN_LENGTH:
@@ -146,6 +155,8 @@ class NRKFilm:
 
                     # TMDB Metadata
                     tinfo, tcredits = self.get_tmdb_data(meta_nrk['title'], meta_nrk['original_title'], meta_nrk['year'])
+
+                    print '    [TMDB] Found ' + tinfo['title'] + ', ' + tinfo['release_date'] if 'title' in tinfo else '    [TMDB] No match!'
 
                     meta_tmdb = {
                         'title':            tinfo['title'] if 'title' in tinfo else None,
@@ -228,9 +239,9 @@ class NRKFilm:
     # Tools
     class Tools:
         # Get JSON data
-        def get_json(self, url):
+        def get_json(self, url, session):
             try:
-                data = json.loads(requests.get(url).text)
+                data = json.loads(session.get(url).text)
             except:
                 raise
             else:
