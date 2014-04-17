@@ -67,8 +67,11 @@ def index():
 # Play
 @plugin.route('/play/<url>/')
 def play(url):
-    plugin.log.info('Playing url: %s' % url)
-    plugin.set_resolved_url(url)
+    urltest = 'http://nordond35a-f.akamaihd.net/z/wo/open/d7/d7790fae5b04d67f6787e65cfadc6dc57b5005e4/d7790fae5b04d67f6787e65cfadc6dc57b5005e4_,141,316,563,1266,2250,.mp4.csmil/manifest.f4m'
+    plugin.log.info('[NRKFilm] Playing url: %s' % urltest)
+    plugin.set_resolved_url(urltest)
+    #plugin.log.info('Playing url: %s' % url)
+    #plugin.set_resolved_url(url)
 
 
 
