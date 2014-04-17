@@ -79,13 +79,13 @@ class NRKFilm:
 
 
     # Get TMDB data
-    def get_tmdb_data(title, original_title, year):
+    def get_tmdb_data(self, title, original_title, year):
         # Search
         query = original_title or title
 
-        search = tmdb.Search()
+        search = self.tmdb.Search()
         response = search.movie({'query': query})
-        print search.results
+
         for s in search.results:
             film = None
 
@@ -95,13 +95,12 @@ class NRKFilm:
                 else:
                     if (title.lower() == s['title'].lower()) or (original_title.lower() == s['original_title'].lower()):
                         film = s
-
             else:
                 film = s
 
             # Details
             if film:
-                f = tmdb.Movies(film['id'])
+                f = self.tmdb.Movies(film['id'])
                 
                 print '  [TMDb] ' + film['title'] + ', year: ' + year + ', release: ' + film['release_date'] 
 
@@ -307,6 +306,7 @@ if __name__ == '__main__':
             print '  > Genre:\t', film['tmdb']['genre']
             print '  > Director:\t', film['tmdb']['director']
             print '  > Writer:\t', film['tmdb']['writer']
+            print '  > Cast:\t', film['tmdb']['cast']
             print '  > Poster:\t', film['tmdb']['poster']
             print '  > Fanart:\t', film['tmdb']['fanart']
             print
