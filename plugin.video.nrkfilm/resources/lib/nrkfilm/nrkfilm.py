@@ -33,6 +33,33 @@ URL_FANART  = URL_IMAGE + 'w1280%s'
 TMDB_KEY    = '8cca874e1c98f99621d8200be1b16bd0'
 
 
+#
+# Logging
+#
+
+class Logging:
+    # Log
+    def __init__(self, string):
+        # Colors
+        HEADER = '\033[95m'
+        OKBLUE = '\033[94m'
+        OKGREEN = '\033[92m'
+        WARNING = '\033[93m'
+        FAIL = '\033[91m'
+        ENDC = '\033[0m'
+
+        # Ouput
+        warning = WARNING + '[START]' + ENDC
+        okblue = OKBLUE + '[DONE]' + ENDC
+        okgreen = OKGREEN + '[SUCCESS]' + ENDC
+        failred = FAIL + '[FAIL]' + ENDC
+
+        out  = HEADER + '[NRKFilm] ' + ENDC
+        out += string.replace('[DONE]', okblue).replace('[SUCCESS]', okgreen).replace('[FAIL]', failred).replace('[START]', warning)
+
+        print out
+
+
 # 
 # NRKFilm
 #
@@ -63,7 +90,6 @@ class NRKFilm:
     # Get media elements (find potential feature films)
     def get_elements(self):
         # Get data
-        print '[NRKFilm] Get elements'
         data = self.tools.get_json(URL_FILMS, self.session)
 
         # Elements
@@ -83,7 +109,6 @@ class NRKFilm:
                     elements.append(eid)
 
         # Return
-        print '  [DONE] Found ' + len(elements) + ' possible feature films (' + len(self.cache.films.keys()) + ' alredy in cache)'
         return elements
 
 
@@ -122,7 +147,10 @@ class NRKFilm:
         films = {}
 
         # Elements
+        #print bcolors.'[NRKFilm] Get elements'
+        Logging('[START] Get elements')
         elements = self.get_elements()
+        Logging('[DONE] Found ' + str(len(elements)) + ' possible feature films (' + str(len(self.cache.films.keys())) + ' alredy in cache)')
 
         for element in elements:
             # Cached
@@ -132,11 +160,10 @@ class NRKFilm:
             # Not cached
             else:
                 # Get element info
-                print '[NRKFilm] Get element info (' + element + ')'
+                Logging('[START] Get element info (' + element + ')')
                 info = self.tools.get_json((URL_FILM % element), self.session)
-                print '  [DONE] Found ' + self.tools.clean_title(info['title'])
-                print '    [AVAILABLE] ' + info['isAvailable']
-                print '    [DURATION] ' + info['convivaStatistics']['contentLength'] + ' (accepted: ' + int(info['convivaStatistics']['contentLength']) > MIN_LENGTH
+                Logging('[DONE] Found ' + self.tools.clean_title(info['title']))
+                Logging(' > Avialable: ' + str(info['isAvailable']))
 
                 # Check if avialable and of feature length
                 if info['isAvailable'] and int(info['convivaStatistics']['contentLength']) > MIN_LENGTH:
@@ -156,7 +183,7 @@ class NRKFilm:
                     # TMDB Metadata
                     tinfo, tcredits = self.get_tmdb_data(meta_nrk['title'], meta_nrk['original_title'], meta_nrk['year'])
 
-                    print '    [TMDB] Found ' + tinfo['title'] + ', ' + tinfo['release_date'] if 'title' in tinfo else '    [TMDB] No match!'
+                    Logging(' > TMDB: [SUCCESS] Found ' + tinfo['title'] + ', ' + tinfo['release_date'] if 'title' in tinfo else '    > TMDB: [FAIL] No match!')
 
                     meta_tmdb = {
                         'title':            tinfo['title'] if 'title' in tinfo else None,
@@ -305,7 +332,7 @@ if __name__ == '__main__':
         print '  > Plot:\t', film['nrk']['description']
         print '  > Poster:\t', film['nrk']['poster']
         print '  > Fanart:\t', film['nrk']['fanart']
-        print '  > Stream:\t', film['nrk']['stream'][0:50], '...'
+        print '  > Stream:\t', film['nrk']['stream'][0:30], '...', film['nrk']['stream'][-20:]
         print '  > Duration:\t', film['nrk']['duration']
         print '  > Expires:\t', film['nrk']['expires'], '(Now:', str(int(time.time())) + ')'
         print
