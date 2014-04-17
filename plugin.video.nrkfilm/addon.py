@@ -44,7 +44,7 @@ def index():
             'properties': {
                 'fanart_image': film['tmdb']['fanart'] or film['nrk']['fanart'] or '',
             },
-            'path':         film['nrk']['stream'] if not _isDebug() else plugin.url_for('index'),
+            'path':         plugin.url_for('play', url=film['nrk']['stream']),
             'is_playable':  True,
             'stream_info': {
                 'video': {
@@ -62,6 +62,15 @@ def index():
     
     # Return
     return items
+
+
+# Play
+@plugin.route('/play/<url>/')
+def play(url):
+    plugin.log.info('Playing url: %s' % url)
+    plugin.set_resolved_url(url)
+
+
 
 
 # Debug
