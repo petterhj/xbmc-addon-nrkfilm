@@ -35,14 +35,17 @@ def get_tmdb_data(title, original_title, year):
 
     search = tmdb.Search()
     response = search.movie({'query': query})
-
+    print search.results
     for s in search.results:
         film = None
 
         if year:
-            print '  [TMDb] ' + s['title'] + ', year: ' + year + ', release: ' + s['release_date'] 
             if year in s['release_date']:
                 film = s
+            else:
+                if (title.lower() == s['title'].lower()) or (original_title.lower() == s['original_title'].lower()):
+                    film = s
+
         else:
             film = s
 
@@ -50,9 +53,11 @@ def get_tmdb_data(title, original_title, year):
         if film:
             f = tmdb.Movies(film['id'])
             
+            print '  [TMDb] ' + film['title'] + ', year: ' + year + ', release: ' + film['release_date'] 
+
             return f.info(), f.credits()
 
     return {}, {}
 
 
-print get_tmdb_data('Med Grimm og Gru', None, '1976')
+print get_tmdb_data('Too Big To Fail', None, '2008')

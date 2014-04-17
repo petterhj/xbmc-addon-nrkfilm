@@ -5,6 +5,7 @@
 import sys
 import os
 import re
+import time
 import datetime
 import requests
 import json
@@ -78,27 +79,32 @@ class NRKFilm:
 
 
     # Get TMDB data
-    def get_tmdb_data(self, title, original_title, year):
+    def get_tmdb_data(title, original_title, year):
         # Search
         query = original_title or title
 
-        search = self.tmdb.Search()
+        search = tmdb.Search()
         response = search.movie({'query': query})
-
+        print search.results
         for s in search.results:
             film = None
 
             if year:
-                print '  [TMDb] ' + s['title'] + ', year: ' + year + ', release: ' + s['release_date'] 
                 if year in s['release_date']:
                     film = s
+                else:
+                    if (title.lower() == s['title'].lower()) or (original_title.lower() == s['original_title'].lower()):
+                        film = s
+
             else:
                 film = s
 
             # Details
             if film:
-                f = self.tmdb.Movies(film['id'])
+                f = tmdb.Movies(film['id'])
                 
+                print '  [TMDb] ' + film['title'] + ', year: ' + year + ', release: ' + film['release_date'] 
+
                 return f.info(), f.credits()
 
         return {}, {}
@@ -136,7 +142,7 @@ class NRKFilm:
                         'fanart':           info['images']['webImages'][2]['imageUrl'] or info['images']['webImages'][1]['imageUrl'] or info['images']['webImages'][0]['imageUrl'],
                         'stream':           info['mediaUrl'],
                         'duration':         (int(info['convivaStatistics']['contentLength']) / 60),
-                        'expires':          re.search('\(([0-9]{10})', info['usageRights']['availableTo']).group(1),
+                        'expires':          self.tools.expiration(info['usageRights']['availableTo']),
                     }
 
                     # TMDB Metadata
@@ -257,6 +263,14 @@ class NRKFilm:
             return title
 
 
+        # Expiration timestamp
+        def expiration(self, timestamp):
+            time = re.search('\(([0-9]{10})[0-9]+\+[0-9]([0-9])', timestamp)
+            gmt = int(time.group(1))
+            tz = int(time.group(2))
+            return (gmt + (tz * 3600))
+
+
 #
 # TESTING
 #
@@ -283,7 +297,7 @@ if __name__ == '__main__':
         print '  > Fanart:\t', film['nrk']['fanart']
         print '  > Stream:\t', film['nrk']['stream'][0:50], '...'
         print '  > Duration:\t', film['nrk']['duration']
-        print '  > Expires:\t', film['nrk']['expires']
+        print '  > Expires:\t', film['nrk']['expires'], '(Now:', str(int(time.time())) + ')'
         print
         if film['tmdb']:
             print '  > Title:\t', film['tmdb']['title']
