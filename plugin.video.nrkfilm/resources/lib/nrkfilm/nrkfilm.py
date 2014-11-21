@@ -254,23 +254,26 @@ class NRKFilm:
                         self.log.exception('Could not get data', e)
 
                     else:
+                        # Title
+                        title = self.tools.clean_title(info['title'])
+
                         # Check if avialable
                         if not info['isAvailable']:
-                            self.log.warning('Skipped "' + self.tools.clean_title(info['title']) + '" (not avialable)')
+                            self.log.warning('Skipped "' + unicode(title) + '" (not avialable)')
                             film = None
 
                         # Check if of feature length
                         elif int(info['convivaStatistics']['contentLength']) < MIN_LENGTH:
-                            self.log.warning('Skipped "' + self.tools.clean_title(info['title']) + '" (short)')
+                            self.log.warning('Skipped "' + unicode(title) + '" (short)')
                             film = None
 
                         # Check if element description for filter matches
                         elif any([e.lower() in info['description'].lower() for e in FILTERS]):
-                            self.log.warning('Skipped "' + self.tools.clean_title(info['title']) + '" (filtered)')
+                            self.log.warning('Skipped "' + unicode(title) + '" (filtered)')
                             film = None
 
                         else:
-                            self.log.success('Found "' + self.tools.clean_title(info['title']) + '"')
+                            self.log.success('Found "' + unicode(title) + '"')
 
                             # Metadata
                             try:
@@ -397,7 +400,7 @@ class NRKFilm:
         # Clean title
         def clean_title(self, title):
             # Remove any unwanted words from title
-            return ' '.join([w for w in title.split(' ') if w not in CLEAN_TITLE])
+            return ' '.join([w for w in title.split(' ') if w not in CLEAN_TITLE]).encode('utf-8')
 
 
         # Find year
