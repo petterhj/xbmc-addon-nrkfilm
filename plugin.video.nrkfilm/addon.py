@@ -23,6 +23,7 @@ def index():
 
     films = nrkfilm.NRKFilm(cache).feature_films()
     
+
     # Items
     items = [
         {
@@ -59,6 +60,10 @@ def index():
             }
         }
     for film in films]
+
+    if len(films) == 0:
+        # No films available
+        plugin.notify(msg='No films available (norwegian IP?)', title='NRKFilm', delay=5000)
     
     # Return
     return items
