@@ -22,7 +22,7 @@ URL_FILMS   = 'http://tv.nrk.no/listobjects/indexelements/filmer-og-serier/page/
 URL_FILM    = 'http://v7.psapi.nrk.no/mediaelement/%s'
 USER_AGENT  = 'xbmc.org'
 COOKIES     = 'NRK_PLAYER_SETTINGS_TV=devicetype=desktop&preferred-player-odm=hlslink&preferred-player-live=hlslink'
-FILTERS     = ['kortfilm', 'fjernsynsteatret']
+FILTERS     = ['kortfilm', 'fjernsynsteatret', 'synstolket']
 CLEAN_TITLE = ['Film:', 'Filmklassiker:', 'Filmsommer:']
 MIN_LENGTH  = 3600
 
@@ -40,6 +40,7 @@ TMDB_KEY    = '8cca874e1c98f99621d8200be1b16bd0'
 class Log:
     # Init
     def __init__(self):
+        self.temp = ''
         self.project = '[\033[95mNRKFilm\033[0m]'
 
         self.codes = {
@@ -52,36 +53,35 @@ class Log:
             'FAIL': '\033[91m'
         }
 
+
     # Process
     def start(self, message, indent=0):
-
-        self.msg(message + ' ' + '.'*(50 - len(message)), nl=False, indent=indent)
+        self.temp  = '  '*indent
+        self.temp += message + ' ' + '.'*(50 - len(message))
 
     def success(self, message='', results=[]):
-        self.msg('[SUCCESS] ' + message, nh=True)
+        self.msg(self.temp + '[SUCCESS] ' + message)
 
         for result in results:
             print '\t>', result
 
     def warning(self, message):
-        self.msg('[WARNING] ' + message, nh=True)        
+        self.msg(self.temp + '[WARNING] ' + message)        
 
     def fail(self, message):
-        self.msg('[FAIL] ' + message, nh=True)
+        self.msg(self.temp + '[FAIL] ' + message)
 
     def exception(self, message, exp):
         exc_type, exc_obj, exc_tb = sys.exc_info()
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
 
-        self.msg('[FAIL] ' + str(message) + ': ' + str(exp) + ' at line ' + str(exc_tb.tb_lineno) + ' in ' + fname + ' (' + str(exc_type) + ')')
+        self.msg(self.temp + '[FAIL] ' + str(message) + ': ' + str(exp) + ' at line ' + str(exc_tb.tb_lineno) + ' in ' + fname + ' (' + str(exc_type) + ')')
 
 
     # Out
-    def msg(self, message=None, nh=False, nl=True, indent=0):
-        if not nh:
-            print self.project, 
-
-        print '  '*indent,
+    def msg(self, message=None, indent=0):
+        out = self.project + ' '
+        out += '  '*indent
 
         if message:
             # Colors
@@ -90,10 +90,11 @@ class Log:
                     message = message.replace(code, self.codes[code] + code + '\033[0m')
 
             # Print message
-            if nl: print message
-            else: print message,
-        else:
-            print
+            out += message
+            
+            print out
+        
+        
 
 
 # 
@@ -259,21 +260,21 @@ class NRKFilm:
 
                         # Check if avialable
                         if not info['isAvailable']:
-                            self.log.warning('Skipped "' + unicode(title) + '" (not avialable)')
+                            self.log.warning('Skipped "' + title + '" (not avialable)')
                             film = None
 
                         # Check if of feature length
                         elif int(info['convivaStatistics']['contentLength']) < MIN_LENGTH:
-                            self.log.warning('Skipped "' + unicode(title) + '" (short)')
+                            self.log.warning('Skipped "' + title + '" (short)')
                             film = None
 
                         # Check if element description for filter matches
                         elif any([e.lower() in info['description'].lower() for e in FILTERS]):
-                            self.log.warning('Skipped "' + unicode(title) + '" (filtered)')
+                            self.log.warning('Skipped "' + title + '" (filtered)')
                             film = None
 
                         else:
-                            self.log.success('Found "' + unicode(title) + '"')
+                            self.log.success('Found "' + title + '"')
 
                             # Metadata
                             try:
@@ -336,7 +337,7 @@ class NRKFilm:
 
                         # Add element to cache
                         films[element] = film
-           
+                        
         # Return
         return films
 
