@@ -239,7 +239,7 @@ class NRKFilm:
                     self.log.start('[CACHED] Loading ' + element + ' from cache', indent=1)
 
                     if films[element]:
-                        self.log.success('Loaded "' + films[element]['nrk']['title'] + '" as "' + films[element]['tmdb']['title'] + '"')
+                        self.log.success('Loaded "' + films[element]['nrk']['title'] + '" as "' + str(films[element]['tmdb']['title']) + '"')
                     else:
                         self.log.warning('Skipped')
 
