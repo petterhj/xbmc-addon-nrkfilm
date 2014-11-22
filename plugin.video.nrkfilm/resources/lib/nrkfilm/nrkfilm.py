@@ -20,6 +20,7 @@ from resources.lib.tmdbsimple import TMDB
 # NRK
 URL_FILMS   = 'http://tv.nrk.no/listobjects/indexelements/filmer-og-serier/page/0'
 URL_FILM    = 'http://v7.psapi.nrk.no/mediaelement/%s'
+URL_GFX     = 'http://m.nrk.no/m/img?kaleidoId=%s&width=%d'
 USER_AGENT  = 'xbmc.org'
 COOKIES     = 'NRK_PLAYER_SETTINGS_TV=devicetype=desktop&preferred-player-odm=hlslink&preferred-player-live=hlslink'
 FILTERS     = ['kortfilm', 'fjernsynsteatret', 'synstolket']
@@ -33,10 +34,7 @@ URL_FANART  = URL_IMAGE + 'w1280%s'
 TMDB_KEY    = '8cca874e1c98f99621d8200be1b16bd0'
 
 
-#
 # Logging
-#
-
 class Log:
     # Init
     def __init__(self):
@@ -94,12 +92,8 @@ class Log:
             
             print out
         
-        
 
-
-# 
 # NRKFilm
-#
 class NRKFilm:
     # Init
     def __init__(self, cache_file):
@@ -287,7 +281,8 @@ class NRKFilm:
                                     'year':             self.tools.find_year(info['description']),
                                     'description':      info['description'].replace('\n', '').replace('\r', '.').replace('..', '. '),
                                     'poster':           None,
-                                    'fanart':           info['images']['webImages'][2]['imageUrl'] or info['images']['webImages'][1]['imageUrl'] or info['images']['webImages'][0]['imageUrl'],
+                                    # 'fanart':           info['images']['webImages'][2]['imageUrl'] or info['images']['webImages'][1]['imageUrl'] or info['images']['webImages'][0]['imageUrl'],
+                                    'fanart':           URL_GFX % (info['image']['id'], 1920),
                                     'stream':           info['mediaUrl'],
                                     'duration':         (int(info['convivaStatistics']['contentLength']) / 60),
                                     'expires':          self.tools.expiration(info['usageRights']['availableTo']),
