@@ -48,7 +48,11 @@ class Log:
             'SUCCESS': '\033[92m',
             'WARNING': '\033[93m',
             'ERROR': '\033[91m',
-            'FAIL': '\033[91m'
+            'FAIL': '\033[91m',
+
+            'not available': '\033[91m',
+            'filtered': '\033[36m',
+            'short': '\033[93m'
         }
 
 
@@ -96,11 +100,14 @@ class Log:
 # NRKFilm
 class NRKFilm:
     # Init
-    def __init__(self, cache_file):
+    def __init__(self, cache_file, debug=False):
         # Logging
         self.log = Log()
 
-        self.log.start('Initializing')
+        self.log.start('Initializing (debug = ' + str(debug) + ')')
+
+        # Debug
+        self.debug = debug
 
         # Session
         try:
@@ -232,10 +239,10 @@ class NRKFilm:
 
                     self.log.start('[CACHED] Loading ' + element + ' from cache', indent=1)
 
-                    if films[element]:
+                    if 'skipped' not in films[element]:
                         self.log.success('Loaded "' + str(films[element]['nrk']['title']) + '" as "' + str(films[element]['tmdb']['title']) + '"')
                     else:
-                        self.log.warning('Skipped')
+                        self.log.warning('Skipped "' + str(films[element]['title']) + '" (' + films[element]['reason'] + ')')
 
                 # Not cached
                 else:
@@ -252,20 +259,20 @@ class NRKFilm:
                         # Title
                         title = self.tools.clean_title(info['title'])
 
-                        # Check if avialable
+                        # Check if available
                         if not info['isAvailable']:
-                            self.log.warning('Skipped "' + title + '" (not avialable)')
-                            film = None
+                            self.log.warning('Skipped "' + title + '" (not available)')
+                            film = {'skipped': True, 'title': title, 'reason': 'not available'}
 
                         # Check if of feature length
                         elif int(info['convivaStatistics']['contentLength']) < MIN_LENGTH:
                             self.log.warning('Skipped "' + title + '" (short)')
-                            film = None
+                            film = {'skipped': True, 'title': title, 'reason': 'short'}
 
                         # Check if element description for filter matches
                         elif any([e.lower() in info['description'].lower() for e in FILTERS]):
                             self.log.warning('Skipped "' + title + '" (filtered)')
-                            film = None
+                            film = {'skipped': True, 'title': title, 'reason': 'filtered'}
 
                         else:
                             self.log.success('Found "' + title + '"')
@@ -337,10 +344,17 @@ class NRKFilm:
         return films
 
 
-    # Avialable feature films
+    # Available feature films
     def feature_films(self):
+        # Available films
+        films = []
+
+        for film in self.films.values():
+            if 'skipped' not in film:
+                films.append(film)
+
         # Return
-        return filter(None, self.films.values())
+        return films
 
 
     # Cache
@@ -430,7 +444,7 @@ class NRKFilm:
 # TESTING
 #
 if __name__ == '__main__':
-    nrk = NRKFilm('/tmp/cache')
+    nrk = NRKFilm('/tmp/nrkcache', debug=True)
 
     print '-'*100
     print 'NRK tests'
@@ -438,7 +452,7 @@ if __name__ == '__main__':
     print 'Cache:', len(nrk.cache.films.keys())
     print 'Films:', len(nrk.films.keys()), '(no new films found)' if len(nrk.cache.films.keys()) == len(nrk.films.keys()) else ''
     print
-    print 'Avialable feature films'
+    print 'Available feature films'
     print '-'*75
 
     for film in nrk.feature_films():
