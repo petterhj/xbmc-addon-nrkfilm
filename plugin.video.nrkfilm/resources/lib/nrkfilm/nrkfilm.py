@@ -159,61 +159,6 @@ class NRKFilm:
                     self.log.warning('Nothing to add')
 
 
-    # Get media elements (find potential feature films)
-    def get_elements(self):
-        # Get data
-        data = self.tools.get_json(URL_FILMS, self.session)
-
-        # Elements
-        elements = []
-
-        for char in data['Data']['characters']:
-            elmts = [e for e in char['elements'] if '/serie/' not in e['Url']]
-            elmts = [f for f in elmts if not any([e.lower() in f['Title'].lower() for e in FILTERS])]
-
-            for element in elmts:
-                try:
-                    # Element ID
-                    eid = element['Url'].split('/')[2].encode('utf8')
-                except:
-                    pass
-                else:
-                    elements.append(eid)
-
-        # Return
-        return elements
-
-
-    # Get TMDB data
-    def get_tmdb_data(self, title, original_title, year):
-        # Search
-        query = original_title or title
-
-        search = self.tmdb.Search()
-        response = search.movie({'query': query})
-
-        for s in search.results:
-            film = None
-
-            if year:
-                if year in s['release_date']:
-                    film = s
-                else:
-                    # TODO: BUG HERE!!!!!
-                    if (title.lower() == s['title'].lower()) or (original_title.lower() == s['original_title'].lower()):
-                        film = s
-            else:
-                film = s
-
-            # Details
-            if film:
-                f = self.tmdb.Movies(film['id'])
-
-                return f.info(), f.credits()
-
-        return {}, {}
-
-
     # Get films
     def get_films(self):
         # Films
@@ -342,6 +287,61 @@ class NRKFilm:
 
         # Return
         return films
+
+
+    # Get media elements (find potential feature films)
+    def get_elements(self):
+        # Get data
+        data = self.tools.get_json(URL_FILMS, self.session)
+
+        # Elements
+        elements = []
+
+        for char in data['Data']['characters']:
+            elmts = [e for e in char['elements'] if '/serie/' not in e['Url']]
+            elmts = [f for f in elmts if not any([e.lower() in f['Title'].lower() for e in FILTERS])]
+
+            for element in elmts:
+                try:
+                    # Element ID
+                    eid = element['Url'].split('/')[2].encode('utf8')
+                except:
+                    pass
+                else:
+                    elements.append(eid)
+
+        # Return
+        return elements
+
+
+    # Get TMDB data
+    def get_tmdb_data(self, title, original_title, year):
+        # Search
+        query = original_title or title
+
+        search = self.tmdb.Search()
+        response = search.movie({'query': query})
+
+        for s in search.results:
+            film = None
+
+            if year:
+                if year in s['release_date']:
+                    film = s
+                else:
+                    # TODO: BUG HERE!!!!!
+                    if (title.lower() == s['title'].lower()) or (original_title.lower() == s['original_title'].lower()):
+                        film = s
+            else:
+                film = s
+
+            # Details
+            if film:
+                f = self.tmdb.Movies(film['id'])
+
+                return f.info(), f.credits()
+
+        return {}, {}
 
 
     # Available feature films
