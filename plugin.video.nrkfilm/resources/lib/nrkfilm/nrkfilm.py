@@ -138,7 +138,7 @@ class NRKFilm:
             self.tools.log('Found ' + str(len(elements)) + ' possible feature films')
 
             # Elements
-            for element in elements:
+            for element in elements[19:23]:
                 # Check if cached
                 if element in self.cache.films:
                     # Load from cache
@@ -313,6 +313,8 @@ class NRKFilm:
                         'writers':      filter(None, [d['name'] if d['job'] == 'Writer' else None for d in cast['crew']]) if 'crew' in cast else [],
                         'cast':         filter(None, [d['name'] for d in cast['cast']]) if 'cast' in cast else []
                     }
+
+                    break
 
         # Result
         return result
