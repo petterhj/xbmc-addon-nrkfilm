@@ -50,7 +50,7 @@ COLOR_RESET     = '\033[0m'
 # NRKFilm
 class NRKFilm:
     # Init
-    def __init__(self, cache_file, debug=False):
+    def __init__(self, cache_file, ignore_geoblock=False):
         # Tools
         self.tools = self.Tools()
             
@@ -70,7 +70,7 @@ class NRKFilm:
         self.tools.log('Initializing (debug = ' + str(debug) + ')')
 
         # Debug
-        self.debug = debug
+        self.geoblock = ignore_geoblock
 
         # Initialize
         try:
@@ -165,9 +165,9 @@ class NRKFilm:
                         film.nrk_title = self.tools.clean_title(info['title'])
 
                         # Check if available (or debug)
-                        if info['isAvailable'] or self.debug:
+                        if info['isAvailable'] or self.geoblock:
                             # Check length
-                            if self.debug or int(info['convivaStatistics']['contentLength']) > MIN_LENGTH:
+                            if self.geoblock or int(info['convivaStatistics']['contentLength']) > MIN_LENGTH:
                                 # Check if element description for filter matches
                                 if not any([e.lower() in info['description'].lower() for e in FILTERS]):
                                     # Passed
