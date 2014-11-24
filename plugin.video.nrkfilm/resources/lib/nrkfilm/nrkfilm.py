@@ -67,7 +67,7 @@ class NRKFilm:
         ])
         self.errors.align = 'l'
 
-        self.tools.log('Initializing (debug = ' + str(debug) + ')')
+        self.tools.log('Initializing (ignore geoblock = ' + str(ignore_geoblock) + ')')
 
         # Debug
         self.geoblock = ignore_geoblock
