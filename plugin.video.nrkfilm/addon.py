@@ -60,52 +60,13 @@ def index():
         }
     for film in films]
 
-    '''
-    # Items
-    items = [
-        {
-            'icon':         film['tmdb']['poster'] or film['nrk']['poster'] or film['nrk']['fanart'] or '',
-            'thumbnail':    film['tmdb']['poster'] or film['nrk']['poster'] or film['nrk']['fanart'] or '',
-            'label':        film['tmdb']['title'] or film['nrk']['title'] or '',
-            'info': {
-                'title':        film['tmdb']['title'] or film['nrk']['title'] or '',
-                'originaltitle':film['tmdb']['original_title'] or film['nrk']['original_title'] or film['tmdb']['title'] or film['nrk']['title'] or '',
-                'plot':         film['tmdb']['description'] or film['nrk']['description'] or '',
-                'plotoutline':  film['tmdb']['description'] or film['nrk']['description'] or '',
-                'year':         film['tmdb']['year'] or film['nrk']['year'] or 0,
-                'genre':        ', '.join(film['tmdb']['genre']),
-                'director':     film['tmdb']['director'][0] if len(film['tmdb']['director']) > 0 else '',
-                'writer':       film['tmdb']['writer'][0] if len(film['tmdb']['writer']) > 0 else '',
-                'cast':         film['tmdb']['cast'],
-                'rating':       10
-            },
-            'properties': {
-                'fanart_image': film['tmdb']['fanart'] or film['nrk']['fanart'] or '',
-            },
-            'path':         plugin.url_for('play', url=film['nrk']['stream']),
-            'is_playable':  True,
-            'stream_info': {
-                'video': {
-                    'codec':        'h264',
-                    'width':        1280,
-                    'height':       720
-                },
-                'audio': {
-                    'codec':        'aac',
-                    'channels':     2
-                }
-            }
-        }
-    for film in films]
-
+    # No films
     if len(films) == 0:
         # No films available
         plugin.notify(msg='No films available (norwegian IP?)', title='NRKFilm', delay=5000)
-    '''
     
     # Return
-    # return items
-    return []
+    return items
 
 
 # Play
