@@ -185,16 +185,17 @@ class NRKFilm:
                                         self.tools.catch_error(self.errors, e, 'Could not fetch TMDB data for "' + film.nrk_title + '"')
 
                                     else:
-                                        film.tmdb_title     = tmdb_meta['title']
-                                        film.tmdb_org_title = tmdb_meta['org_title']
-                                        film.tmdb_year      = tmdb_meta['year']
-                                        film.tmdb_plot      = tmdb_meta['plot']
-                                        film.tmdb_poster    = tmdb_meta['poster']
-                                        film.tmdb_backdrop  = tmdb_meta['backdrop']
-                                        film.tmdb_genres    = tmdb_meta['genres']
-                                        film.tmdb_directors = tmdb_meta['directors']
-                                        film.tmdb_writers   = tmdb_meta['writers']
-                                        film.tmdb_cast      = tmdb_meta['cast']
+                                        if tmdb_meta:
+                                            film.tmdb_title     = tmdb_meta['title']
+                                            film.tmdb_org_title = tmdb_meta['org_title']
+                                            film.tmdb_year      = tmdb_meta['year']
+                                            film.tmdb_plot      = tmdb_meta['plot']
+                                            film.tmdb_poster    = tmdb_meta['poster']
+                                            film.tmdb_backdrop  = tmdb_meta['backdrop']
+                                            film.tmdb_genres    = tmdb_meta['genres']
+                                            film.tmdb_directors = tmdb_meta['directors']
+                                            film.tmdb_writers   = tmdb_meta['writers']
+                                            film.tmdb_cast      = tmdb_meta['cast']
 
                                 else:
                                     film.reason = 'Filtered'
