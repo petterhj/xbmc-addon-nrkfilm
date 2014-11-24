@@ -58,7 +58,7 @@ class NRKFilm:
         self.results = PrettyTable([
             'Element', 'Cached', 'Feature', 'Reason', 'Expires', 'Duration',
             'Title', 'Year', 'Org.Title',
-            'T.Title', 'T.Year', 'T.Ds', 'T.Ws', 'T.C'
+            'T.Title', 'T.Year'
         ])
         self.results.align = 'l'
 
@@ -231,10 +231,7 @@ class NRKFilm:
                     film.nrk_org_title if film.nrk_org_title else '',
 
                     film.tmdb_title if film.tmdb_title else '',
-                    film.tmdb_year if film.tmdb_year else '',
-                    len(film.tmdb_directors) if film.tmdb_directors else '',
-                    len(film.tmdb_writers) if film.tmdb_writers else '',
-                    len(film.tmdb_cast) if film.tmdb_cast else ''
+                    film.tmdb_year if film.tmdb_year else ''
                 ])
 
             # Log: Results
