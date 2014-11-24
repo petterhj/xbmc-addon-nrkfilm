@@ -21,7 +21,7 @@ def index():
     # Get feature films
     cache = plugin.storage_path + 'nrkcache' if not _isDebug() else '/tmp/cache'
 
-    films = nrkfilm.NRKFilm(cache).feature_films()
+    films = nrkfilm.NRKFilm(cache).feature_films() if not _isDebug() else nrkfilm.NRKFilm(cache, ignore_geoblock=True).feature_films()
   
     # Items
     items = [
