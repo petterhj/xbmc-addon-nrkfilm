@@ -19,16 +19,16 @@ def index():
     plugin.set_content('movies')
 
     # Get feature films
-    cache = plugin.storage_path + 'nrkcache' if not _isDebug() else '/tmp/cache'
+    cache = plugin.storage_path + 'nrkcache' if not _isDebug() else '/tmp/nrkcache'
 
-    films = nrkfilm.NRKFilm(cache).feature_films() if not _isDebug() else nrkfilm.NRKFilm(cache, ignore_geoblock=True).feature_films()
+    films = nrkfilm.NRKFilm(cache).feature_films() if not _isDebug() else nrkfilm.NRKFilm(cache, ignore_geoblock=False).feature_films()
   
     # Items
     items = [
         {
             'icon':         film.tmdb_poster or film.nrk_backdrop or '',
             'thumbnail':    film.tmdb_poster or film.nrk_backdrop or '',
-            'label':        film.tmdb_title or film.tmdb_org_title or film.nrk_title or film.nrk_org_title or '',
+            'label':        film.tmdb_title or film.tmdb_org_title or film.nrk_title.decode('utf-8') or film.nrk_org_title or '',
             'info': {
                 'title':        film.tmdb_title or film.tmdb_org_title or film.nrk_title or film.nrk_org_title or '',
                 'originaltitle':film.tmdb_org_title or film.nrk_org_title or film.tmdb_title or film.nrk_title or '',
@@ -45,7 +45,7 @@ def index():
                 'fanart_image': film.tmdb_backdrop or film.nrk_backdrop or '',
             },
             'path':         plugin.url_for('play', url=film.nrk_stream) if film.nrk_stream else '',
-            'is_playable':  True if film.nrk_stream else False,
+            'is_playable':  True,
             'stream_info': {
                 'video': {
                     'codec':        'h264',

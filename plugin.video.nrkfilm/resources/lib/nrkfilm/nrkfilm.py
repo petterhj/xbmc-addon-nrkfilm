@@ -56,7 +56,7 @@ class NRKFilm:
             
         # Logging
         self.results = PrettyTable([
-            'Element', 'Cached', 'Feature', 'Reason', 'Expires',
+            'Element', 'Cached', 'Feature', 'Reason', 'Expires', 'Duration',
             'Title', 'Year', 'Org.Title',
             'T.Title', 'T.Year', 'T.Ds', 'T.Ws', 'T.C'
         ])
@@ -138,12 +138,7 @@ class NRKFilm:
             self.tools.log('Found ' + str(len(elements)) + ' possible feature films')
 
             # Elements
-            i = 0
             for element in elements:
-                # i = (i + 1)
-                # if i > 25:
-                #     break
-
                 # Check if cached
                 if element in self.cache.films:
                     # Load from cache
@@ -176,10 +171,10 @@ class NRKFilm:
                                     # NRK metadata
                                     film.nrk_year       = self.tools.find_year(info['description'])
                                     film.nrk_org_title  = self.tools.find_org_title(info['description'])
-                                    film.nrk_plot       = info['description'].replace('\n', '').replace('\r', '.').replace('..', '. ')
+                                    film.nrk_plot       = self.tools.clean_plot(info['description'])
                                     film.nrk_backdrop   = URL_GFX % (info['image']['id'], 1920)
                                     film.nrk_stream     = info['mediaUrl'] if 'mediaUrl' in info else None
-                                    film.nrk_duration   = (int(info['convivaStatistics']['contentLength']) / 60) if info['isAvailable'] else None,
+                                    film.nrk_duration   = info['convivaStatistics']['contentLength'] if info['isAvailable'] else None,
                                     film.nrk_expires    = self.tools.expiration(info['usageRights']['availableTo'])
 
                                     # TMDB metadata
@@ -226,6 +221,8 @@ class NRKFilm:
                     COLOR_GREEN + 'True' + COLOR_RESET if film.feature else COLOR_RED + 'False' + COLOR_RESET,
                     film.reason,
                     expires,
+                    COLOR_CYAN + str(film.nrk_duration[0]) + COLOR_RESET if film.nrk_duration > 0 else '',
+
 
                     # Meta
                     film.nrk_title if film.nrk_title else '',
@@ -329,6 +326,16 @@ class NRKFilm:
         def clean_title(self, title):
             # Remove any unwanted words from title
             return ' '.join([w for w in title.split(' ') if w not in CLEAN_TITLE]).encode('utf-8')
+
+
+        # Clean plot
+        def clean_plot(self, plot):
+            plot = plot.replace('\n', '')
+            plot = plot.replace('\r', '.')
+            plot = ' '.join(plot.split())
+            plot = plot.replace('..', '. ')
+
+            return plot.encode('utf-8')
 
 
         # Find year
