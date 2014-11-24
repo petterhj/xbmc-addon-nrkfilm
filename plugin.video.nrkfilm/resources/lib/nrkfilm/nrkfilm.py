@@ -144,6 +144,12 @@ class NRKFilm:
                     # Load from cache
                     film = self.cache.films[element]
 
+                    # Check if expired
+                    if film.nrk_expires and int(time.time()) > film.nrk_expires:
+                        # Mark expired
+                        film.feature = False
+                        film.reason = 'Expired'
+
                 else:
                     # New film
                     film = Film(element_id=element)
@@ -204,24 +210,17 @@ class NRKFilm:
                         else:
                             film.reason = 'Not available'
 
-
                 # Add to films
                 films[film.id] = film
 
                 # Log: Result
-                if film.nrk_expires:
-                    expires = datetime.datetime.fromtimestamp(film.nrk_expires).strftime('%d.%m.%y (%H:%M)')
-                    expires = COLOR_RED + expires + COLOR_RESET if int(time.time()) > film.nrk_expires else COLOR_YELLOW + expires + COLOR_RESET
-                else:
-                    expires = ''                        
-
                 self.results.add_row([
                     # Element
                     COLOR_CYAN + film.id + COLOR_RESET, 
                     COLOR_GREEN + 'True' + COLOR_RESET if element in self.cache.films else COLOR_BLUE + 'False' + COLOR_RESET,
                     COLOR_GREEN + 'True' + COLOR_RESET if film.feature else COLOR_RED + 'False' + COLOR_RESET,
                     film.reason,
-                    expires,
+                    COLOR_YELLOW + datetime.datetime.fromtimestamp(film.nrk_expires).strftime('%d.%m.%y (%H:%M)') + COLOR_RESET if film.nrk_expires else '',
                     COLOR_CYAN + str(film.nrk_duration[0]) + COLOR_RESET if film.nrk_duration > 0 else '',
 
 
