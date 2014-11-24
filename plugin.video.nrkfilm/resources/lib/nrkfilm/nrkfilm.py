@@ -179,22 +179,22 @@ class NRKFilm:
 
                                     # TMDB metadata
                                     try:
-                                        tinfo, tcredits = self.get_tmdb_data(film.nrk_title, film.nrk_org_title, film.nrk_year)
+                                        tmdb_meta = self.get_tmdb_data(film.nrk_org_title, film.nrk_year) or self.get_tmdb_data(film.nrk_title, film.nrk_year)
 
                                     except Exception, e:
                                         self.tools.catch_error(self.errors, e, 'Could not fetch TMDB data for "' + film.nrk_title + '"')
 
                                     else:
-                                        film.tmdb_title     = tinfo['title'] if 'title' in tinfo else None
-                                        film.tmdb_org_title = tinfo['original_title'] if 'original_title' in tinfo else None
-                                        film.tmdb_year      = tinfo['release_date'].split('-')[0] if 'release_date' in tinfo and tinfo['release_date'] else None
-                                        film.tmdb_plot      = tinfo['overview'] if 'overview' in tinfo else None
-                                        film.tmdb_poster    = (URL_POSTER % tinfo['poster_path']) if 'poster_path' in tinfo and tinfo['poster_path'] else None
-                                        film.tmdb_backdrop  = (URL_FANART % tinfo['backdrop_path']) if 'backdrop_path' in tinfo and tinfo['backdrop_path'] else None
-                                        film.tmdb_genres    = [g['name'] for g in tinfo['genres']] if 'genres' in tinfo else []
-                                        film.tmdb_directors = filter(None, [d['name'] if d['job'] == 'Director' else None for d in tcredits['crew']]) if 'crew' in tcredits else []
-                                        film.tmdb_writers   = filter(None, [d['name'] if d['job'] == 'Writer' else None for d in tcredits['crew']]) if 'crew' in tcredits else []
-                                        film.tmdb_cast      = filter(None, [d['name'] for d in tcredits['cast']]) if 'cast' in tcredits else []
+                                        film.tmdb_title     = tmdb_meta['title']
+                                        film.tmdb_org_title = tmdb_meta['org_title']
+                                        film.tmdb_year      = tmdb_meta['year']
+                                        film.tmdb_plot      = tmdb_meta['plot']
+                                        film.tmdb_poster    = tmdb_meta['poster']
+                                        film.tmdb_backdrop  = tmdb_meta['backdrop']
+                                        film.tmdb_genres    = tmdb_meta['genres']
+                                        film.tmdb_directors = tmdb_meta['directors']
+                                        film.tmdb_writers   = tmdb_meta['writers']
+                                        film.tmdb_cast      = tmdb_meta['cast']
 
                                 else:
                                     film.reason = 'Filtered'
@@ -269,33 +269,52 @@ class NRKFilm:
 
 
     # Get TMDB data
-    def get_tmdb_data(self, title, original_title, year):
+    def get_tmdb_data(self, title, year):
+        # Result
+        result = None
+
         # Search
-        query = original_title or title
-
         search = self.tmdb.Search()
-        response = search.movie({'query': query})
 
-        for s in search.results:
-            film = None
+        # Original title
+        if title:
+            response = search.movie({'query': title})
 
-            if year:
-                if year in s['release_date']:
-                    film = s
-                else:
-                    # TODO: BUG HERE!!!!!
-                    if (title.lower() == s['title'].lower()) or (original_title.lower() == s['original_title'].lower()):
+            for s in response['results']:
+                film = None
+
+                if year:
+                    if str(year) in s['release_date']:
                         film = s
-            else:
-                film = s
+                    else:
+                        # TODO: BUG HERE!!!!!
+                        if (title.lower() == s['title'].lower()) or (title.lower() == s['original_title'].lower()):
+                            film = s
+                else:
+                    film = s
 
-            # Details
-            if film:
-                f = self.tmdb.Movies(film['id'])
+                # Parse result
+                if film:
+                    f = self.tmdb.Movies(film['id'])
+                    info = f.info()
+                    cast = f.credits()
 
-                return f.info(), f.credits()
+                    result = {
+                        'title':        info['title'] if 'title' in info else None,
+                        'org_title':    info['original_title'] if 'original_title' in info else None,
+                        'year':         info['release_date'].split('-')[0] if 'release_date' in info else None,
+                        'plot':         info['overview'] if 'overview' in info else None,
+                        'poster':       (URL_POSTER % info['poster_path']) if 'poster_path' in info and info['poster_path'] else None,
+                        'backdrop':     (URL_FANART % info['backdrop_path']) if 'backdrop_path' in info and info['backdrop_path'] else None,
+                        'genres':       [g['name'] for g in info['genres']] if 'genres' in info else [],
 
-        return {}, {}
+                        'directors':    filter(None, [d['name'] if d['job'] == 'Director' else None for d in cast['crew']]) if 'crew' in cast else [],
+                        'writers':      filter(None, [d['name'] if d['job'] == 'Writer' else None for d in cast['crew']]) if 'crew' in cast else [],
+                        'cast':         filter(None, [d['name'] for d in cast['cast']]) if 'cast' in cast else []
+                    }
+
+        # Result
+        return result
 
 
     # Available feature films
@@ -386,4 +405,4 @@ class NRKFilm:
 
 # Testing
 if __name__ == '__main__':
-    nrk = NRKFilm('/tmp/nrkcache', debug=True)
+    nrk = NRKFilm('/tmp/nrkcache', ignore_geoblock=True)

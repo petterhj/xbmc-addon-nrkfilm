@@ -21,7 +21,7 @@ def index():
     # Get feature films
     cache = plugin.storage_path + 'nrkcache' if not _isDebug() else '/tmp/nrkcache'
 
-    films = nrkfilm.NRKFilm(cache).feature_films() if not _isDebug() else nrkfilm.NRKFilm(cache, ignore_geoblock=False).feature_films()
+    films = nrkfilm.NRKFilm(cache).feature_films() if not _isDebug() else nrkfilm.NRKFilm(cache, ignore_geoblock=True).feature_films()
   
     # Items
     items = [
@@ -60,8 +60,12 @@ def index():
         }
     for film in films]
 
+    # Sort
+    if len(films) > 0:
+        items = sorted(items, key=lambda item: item['label'])
+
     # No films
-    if len(films) == 0:
+    else:
         # No films available
         plugin.notify(msg='No films available (norwegian IP?)', title='NRKFilm', delay=5000)
     
