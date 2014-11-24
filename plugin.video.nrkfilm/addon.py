@@ -45,7 +45,7 @@ def index():
                 'fanart_image': film.tmdb_backdrop or film.nrk_backdrop or '',
             },
             'path':         plugin.url_for('play', url=film.nrk_stream) if film.nrk_stream else '',
-            'is_playable':  True,
+            'is_playable':  True if film.nrk_stream else False,
             'stream_info': {
                 'video': {
                     'codec':        'h264',
