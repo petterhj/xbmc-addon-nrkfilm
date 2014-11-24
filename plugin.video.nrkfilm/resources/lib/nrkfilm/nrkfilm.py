@@ -138,7 +138,7 @@ class NRKFilm:
             self.tools.log('Found ' + str(len(elements)) + ' possible feature films')
 
             # Elements
-            for element in elements[19:23]:
+            for element in elements:
                 # Check if cached
                 if element in self.cache.films:
                     # Load from cache
