@@ -6,157 +6,118 @@ import sys
 import os
 import re
 import time
+import json
+import time
 import datetime
 import requests
-import json
-import pickle
 
 if __name__ == '__main__':
     sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..'))
     
 from resources.lib.tmdbsimple import TMDB
+from resources.lib.prettytable import PrettyTable
+
+from film import Film
+from cache import Cache
 
 
 # NRK
-URL_FILMS   = 'http://tv.nrk.no/listobjects/indexelements/filmer-og-serier/page/0'
-URL_FILM    = 'http://v7.psapi.nrk.no/mediaelement/%s'
-URL_GFX     = 'http://m.nrk.no/m/img?kaleidoId=%s&width=%d'
-USER_AGENT  = 'xbmc.org'
-COOKIES     = 'NRK_PLAYER_SETTINGS_TV=devicetype=desktop&preferred-player-odm=hlslink&preferred-player-live=hlslink'
-FILTERS     = ['kortfilm', 'fjernsynsteatret', 'synstolket']
-CLEAN_TITLE = ['Film:', 'Filmklassiker:', 'Filmsommer:']
-MIN_LENGTH  = 3600
+URL_FILMS       = 'http://tv.nrk.no/listobjects/indexelements/filmer-og-serier/page/0'
+URL_FILM        = 'http://v7.psapi.nrk.no/mediaelement/%s'
+URL_GFX         = 'http://m.nrk.no/m/img?kaleidoId=%s&width=%d'
+USER_AGENT      = 'xbmc.org'
+COOKIES         = 'NRK_PLAYER_SETTINGS_TV=devicetype=desktop&preferred-player-odm=hlslink&preferred-player-live=hlslink'
+FILTERS         = ['kortfilm', 'fjernsynsteatret', 'synstolket']
+CLEAN_TITLE     = ['Film:', 'Filmklassiker:', 'Filmsommer:']
+MIN_LENGTH      = 3600
 
 # TMDB
-URL_IMAGE   = 'http://image.tmdb.org/t/p/'
-URL_POSTER  = URL_IMAGE + 'w500%s'
-URL_FANART  = URL_IMAGE + 'w1280%s'
-TMDB_KEY    = '8cca874e1c98f99621d8200be1b16bd0'
+URL_IMAGE       = 'http://image.tmdb.org/t/p/'
+URL_POSTER      = URL_IMAGE + 'w500%s'
+URL_FANART      = URL_IMAGE + 'w1280%s'
+TMDB_KEY        = '8cca874e1c98f99621d8200be1b16bd0'
 
-
-# Logging
-class Log:
-    # Init
-    def __init__(self):
-        self.temp = ''
-        self.project = '[\033[95mNRKFilm\033[0m]'
-
-        self.codes = {
-            'REQUEST': '\033[94m',
-            'PARSE': '\033[94m',
-            'CACHED': '\033[36m',
-            'SUCCESS': '\033[92m',
-            'WARNING': '\033[93m',
-            'ERROR': '\033[91m',
-            'FAIL': '\033[91m',
-
-            'not available': '\033[91m',
-            'filtered': '\033[36m',
-            'short': '\033[93m'
-        }
-
-
-    # Process
-    def start(self, message, indent=0):
-        self.temp  = '  '*indent
-        self.temp += message + ' ' + '.'*(50 - len(message))
-
-    def success(self, message='', results=[]):
-        self.msg(self.temp + '[SUCCESS] ' + message)
-
-        for result in results:
-            print '\t>', result
-
-    def warning(self, message):
-        self.msg(self.temp + '[WARNING] ' + message)        
-
-    def fail(self, message):
-        self.msg(self.temp + '[FAIL] ' + message)
-
-    def exception(self, message, exp):
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-
-        self.msg(self.temp + '[FAIL] ' + str(message) + ': ' + str(exp) + ' at line ' + str(exc_tb.tb_lineno) + ' in ' + fname + ' (' + str(exc_type) + ')')
-
-
-    # Out
-    def msg(self, message=None, indent=0):
-        out = self.project + ' '
-        out += '  '*indent
-
-        if message:
-            # Colors
-            for code in self.codes:
-                if code in message:
-                    message = message.replace(code, self.codes[code] + code + '\033[0m')
-
-            # Print message
-            out += message
-            
-            print out
+# Colors
+COLOR_RED       = '\033[91m'
+COLOR_GREEN     = '\033[92m'
+COLOR_YELLOW    = '\033[93m'
+COLOR_BLUE      = '\033[94m'
+COLOR_MAGENTA   = '\033[95m'
+COLOR_CYAN      = '\033[96m'
+COLOR_RESET     = '\033[0m'
         
 
 # NRKFilm
 class NRKFilm:
     # Init
     def __init__(self, cache_file, debug=False):
+        # Tools
+        self.tools = self.Tools()
+            
         # Logging
-        self.log = Log()
+        self.results = PrettyTable([
+            'Element', 'Cached', 'Feature', 'Reason', 'Expires',
+            'Title', 'Year', 'Org.Title',
+            'T.Title', 'T.Year', 'T.Ds', 'T.Ws', 'T.C'
+        ])
+        self.results.align = 'l'
 
-        self.log.start('Initializing (debug = ' + str(debug) + ')')
+        self.errors = PrettyTable([
+            'Line', 'Filename', 'Type', 'Exception', 'Message'
+        ])
+        self.errors.align = 'l'
+
+        self.tools.log('Initializing (debug = ' + str(debug) + ')')
 
         # Debug
         self.debug = debug
 
-        # Session
+        # Initialize
         try:
-            self.session = requests.session()
-            self.session.headers['User-Agent'] = USER_AGENT
-            self.session.headers['Cookie'] = COOKIES
+            # Session
+            self.session = self.init_session()
 
             # TMDb
             self.tmdb = TMDB(TMDB_KEY)
 
-            # Tools
-            self.tools = self.Tools()
-
         except Exception, e:
-            self.log.exception('Could not initialize lib', e)
+            self.tools.catch_error(self.errors, e, 'Could not initialize library')
 
         else:
-            self.log.success('Done')
-
             # Load cache
-            self.log.start('Loading cache')
+            self.tools.log('Loading cache...')
 
             try:
                 # Cache
-                self.cache = self.Cache(cache_file)
+                self.cache = Cache(cache_file)
 
             except Exception, e:
-                self.log.exception('Could not load cache', e)
+                self.tools.catch_error(self.errors, e, 'Could not load cache')
 
             else:
-                self.log.success('Found ' + str(len(self.cache.films)) + ' cached films')
+                self.tools.log('Found ' + str(len(self.cache.films)) + ' cached films')
             
                 # Get feature films
                 self.films = self.get_films() or {}
 
                 # Write cache
-                self.log.start('Update cache')
+                self.tools.log('Updating cache...')
 
                 if len(self.films) > 0:
                     try:
                         self.cache.write(self.films)
 
                     except Exception, e:
-                        self.log.exception('Could not update cache', e)
+                        self.tools.catch_error(self.errors, e, 'Could not write cache')
 
                     else:
-                        self.log.success('Wrote ' + str(len(self.films)) + ' films to cache')
+                        self.tools.log('Wrote ' + str(len(self.films)) + ' films to cache')
                 else:
-                    self.log.warning('Nothing to add')
+                    self.tools.log('Nothing to update')
+                    
+
+        # Errors
+        print self.errors
 
 
     # Get films
@@ -165,126 +126,122 @@ class NRKFilm:
         films = {}
 
         # Get elements
-        self.log.start('Get elements from NRK')
+        self.tools.log('Getting elements from NRK API...')
 
         try:
             elements = self.get_elements()
 
         except Exception, e:
-            self.log.exception('Could fetch elements', e)
+            self.tools.catch_error(self.errors, e, 'Could not fetch elements from NRK')
 
         else:
-            self.log.success('Found ' + str(len(elements)) + ' possible feature films')
+            self.tools.log('Found ' + str(len(elements)) + ' possible feature films')
 
             # Elements
+            i = 0
             for element in elements:
-                # Cached
-                if self.cache.is_cached(element):
-                    films[element] = self.cache.fetch(element)
+                # i = (i + 1)
+                # if i > 25:
+                #     break
 
-                    self.log.start('[CACHED] Loading ' + element + ' from cache', indent=1)
+                # Check if cached
+                if element in self.cache.films:
+                    # Load from cache
+                    film = self.cache.films[element]
 
-                    if 'skipped' not in films[element]:
-                        self.log.success('Loaded "' + str(films[element]['nrk']['title']) + '" as "' + str(films[element]['tmdb']['title']) + '"')
-                    else:
-                        self.log.warning('Skipped "' + str(films[element]['title']) + '" (' + films[element]['reason'] + ')')
-
-                # Not cached
                 else:
-                    self.log.start('[REQUEST] Get ' + element + ' info from NRK', indent=1)
+                    # New film
+                    film = Film(element_id=element)
 
                     try:
                         # Get info
                         info = self.tools.get_json((URL_FILM % element), self.session)
 
                     except Exception, e:
-                        self.log.exception('Could not get data', e)
+                        self.tools.catch_error(self.errors, e, 'Could not fetch element details')
 
                     else:
                         # Title
-                        title = self.tools.clean_title(info['title'])
+                        film.nrk_title = self.tools.clean_title(info['title'])
 
-                        # Check if available
-                        if not info['isAvailable']:
-                            self.log.warning('Skipped "' + title + '" (not available)')
-                            film = {'skipped': True, 'title': title, 'reason': 'not available'}
+                        # Check if available (or debug)
+                        if info['isAvailable'] or self.debug:
+                            # Check length
+                            if self.debug or int(info['convivaStatistics']['contentLength']) > MIN_LENGTH:
+                                # Check if element description for filter matches
+                                if not any([e.lower() in info['description'].lower() for e in FILTERS]):
+                                    # Passed
+                                    film.feature        = True
 
-                        # Check if of feature length
-                        elif int(info['convivaStatistics']['contentLength']) < MIN_LENGTH:
-                            self.log.warning('Skipped "' + title + '" (short)')
-                            film = {'skipped': True, 'title': title, 'reason': 'short'}
+                                    # NRK metadata
+                                    film.nrk_year       = self.tools.find_year(info['description'])
+                                    film.nrk_org_title  = self.tools.find_org_title(info['description'])
+                                    film.nrk_plot       = info['description'].replace('\n', '').replace('\r', '.').replace('..', '. ')
+                                    film.nrk_backdrop   = URL_GFX % (info['image']['id'], 1920)
+                                    film.nrk_stream     = info['mediaUrl'] if 'mediaUrl' in info else None
+                                    film.nrk_duration   = (int(info['convivaStatistics']['contentLength']) / 60) if info['isAvailable'] else None,
+                                    film.nrk_expires    = self.tools.expiration(info['usageRights']['availableTo'])
 
-                        # Check if element description for filter matches
-                        elif any([e.lower() in info['description'].lower() for e in FILTERS]):
-                            self.log.warning('Skipped "' + title + '" (filtered)')
-                            film = {'skipped': True, 'title': title, 'reason': 'filtered'}
+                                    # TMDB metadata
+                                    try:
+                                        tinfo, tcredits = self.get_tmdb_data(film.nrk_title, film.nrk_org_title, film.nrk_year)
 
-                        else:
-                            self.log.success('Found "' + title + '"')
-
-                            # Metadata
-                            try:
-                                # NRK Metadata
-                                self.log.start('[PARSE] NRK metadata', indent=2)
-
-                                meta_nrk = {
-                                    'title':            self.tools.clean_title(info['title']),
-                                    'original_title':   self.tools.find_org_title(info['description']),
-                                    'year':             self.tools.find_year(info['description']),
-                                    'description':      info['description'].replace('\n', '').replace('\r', '.').replace('..', '. '),
-                                    'poster':           None,
-                                    # 'fanart':           info['images']['webImages'][2]['imageUrl'] or info['images']['webImages'][1]['imageUrl'] or info['images']['webImages'][0]['imageUrl'],
-                                    'fanart':           URL_GFX % (info['image']['id'], 1920),
-                                    'stream':           info['mediaUrl'],
-                                    'duration':         (int(info['convivaStatistics']['contentLength']) / 60),
-                                    'expires':          self.tools.expiration(info['usageRights']['availableTo']),
-                                }
-
-                            except Exception, e:
-                                self.log.exception('Could not get metadata', e)
-
-                            else:
-                                self.log.success('Done')
-
-                                # TMDB Metadata
-                                try:
-                                    self.log.start('[REQUEST] TMDB metadata', indent=2)
-
-                                    tinfo, tcredits = self.get_tmdb_data(meta_nrk['title'], meta_nrk['original_title'], meta_nrk['year'])
-
-                                except Exception, e:
-                                    self.log.exception('Could not get metadata', e)
-
-                                else:
-                                    meta_tmdb = {
-                                        'title':            tinfo['title'] if 'title' in tinfo else None,
-                                        'original_title':   tinfo['original_title'] if 'original_title' in tinfo else None,
-                                        'year':             tinfo['release_date'].split('-')[0] if 'release_date' in tinfo and tinfo['release_date'] else None,
-                                        'description':      tinfo['overview'] if 'overview' in tinfo else None,
-                                        'genre':            [g['name'] for g in tinfo['genres']] if 'genres' in tinfo else [],
-                                        'director':         filter(None, [d['name'] if d['job'] == 'Director' else None for d in tcredits['crew']]) if 'crew' in tcredits else [],
-                                        'writer':           filter(None, [d['name'] if d['job'] == 'Writer' else None for d in tcredits['crew']]) if 'crew' in tcredits else [],
-                                        'cast':             filter(None, [d['name'] for d in tcredits['cast']]) if 'cast' in tcredits else [],
-                                        'poster':           (URL_POSTER % tinfo['poster_path']) if 'poster_path' in tinfo and tinfo['poster_path'] else None,
-                                        'fanart':           (URL_FANART % tinfo['backdrop_path']) if 'backdrop_path' in tinfo and tinfo['backdrop_path'] else None,
-                                    }
-
-                                    # Check if match
-                                    if 'title' in tinfo:
-                                        self.log.success('Found "' + tinfo['title'] + '"')
+                                    except Exception, e:
+                                        self.tools.catch_error(self.errors, e, 'Could not fetch TMDB data for "' + film.nrk_title + '"')
 
                                     else:
-                                        self.log.warning('No match')
+                                        film.tmdb_title     = tinfo['title'] if 'title' in tinfo else None
+                                        film.tmdb_org_title = tinfo['original_title'] if 'original_title' in tinfo else None
+                                        film.tmdb_year      = tinfo['release_date'].split('-')[0] if 'release_date' in tinfo and tinfo['release_date'] else None
+                                        film.tmdb_plot      = tinfo['overview'] if 'overview' in tinfo else None
+                                        film.tmdb_poster    = (URL_POSTER % tinfo['poster_path']) if 'poster_path' in tinfo and tinfo['poster_path'] else None
+                                        film.tmdb_backdrop  = (URL_FANART % tinfo['backdrop_path']) if 'backdrop_path' in tinfo and tinfo['backdrop_path'] else None
+                                        film.tmdb_genres    = [g['name'] for g in tinfo['genres']] if 'genres' in tinfo else []
+                                        film.tmdb_directors = filter(None, [d['name'] if d['job'] == 'Director' else None for d in tcredits['crew']]) if 'crew' in tcredits else []
+                                        film.tmdb_writers   = filter(None, [d['name'] if d['job'] == 'Writer' else None for d in tcredits['crew']]) if 'crew' in tcredits else []
+                                        film.tmdb_cast      = filter(None, [d['name'] for d in tcredits['cast']]) if 'cast' in tcredits else []
 
-                                # Film
-                                film = {
-                                    'nrk':  meta_nrk,
-                                    'tmdb': meta_tmdb
-                                }
+                                else:
+                                    film.reason = 'Filtered'
+                            else:
+                                film.reason = 'Short'
+                        else:
+                            film.reason = 'Not available'
 
-                        # Add element to cache
-                        films[element] = film
 
+                # Add to films
+                films[film.id] = film
+
+                # Log: Result
+                if film.nrk_expires:
+                    expires = datetime.datetime.fromtimestamp(film.nrk_expires).strftime('%d.%m.%y (%H:%M)')
+                    expires = COLOR_RED + expires + COLOR_RESET if int(time.time()) > film.nrk_expires else COLOR_YELLOW + expires + COLOR_RESET
+                else:
+                    expires = ''                        
+
+                self.results.add_row([
+                    # Element
+                    COLOR_CYAN + film.id + COLOR_RESET, 
+                    COLOR_GREEN + 'True' + COLOR_RESET if element in self.cache.films else COLOR_BLUE + 'False' + COLOR_RESET,
+                    COLOR_GREEN + 'True' + COLOR_RESET if film.feature else COLOR_RED + 'False' + COLOR_RESET,
+                    film.reason,
+                    expires,
+
+                    # Meta
+                    film.nrk_title if film.nrk_title else '',
+                    film.nrk_year if film.nrk_year else '',
+                    film.nrk_org_title if film.nrk_org_title else '',
+
+                    film.tmdb_title if film.tmdb_title else '',
+                    film.tmdb_year if film.tmdb_year else '',
+                    len(film.tmdb_directors) if film.tmdb_directors else '',
+                    len(film.tmdb_writers) if film.tmdb_writers else '',
+                    len(film.tmdb_cast) if film.tmdb_cast else ''
+                ])
+
+            # Log: Results
+            print self.results
+            
         # Return
         return films
 
@@ -346,65 +303,26 @@ class NRKFilm:
 
     # Available feature films
     def feature_films(self):
-        # Available films
-        films = []
-
-        for film in self.films.values():
-            if 'skipped' not in film:
-                films.append(film)
-
-        # Return
-        return films
+        # Return feature films
+        return [film for film in self.films.values() if film.feature]
 
 
-    # Cache
-    class Cache:
-        # Initialize cache
-        def __init__(self, cache_file):
-            # Cache file
-            self.cache_file = cache_file
+    # Session
+    def init_session(self):
+        session = requests.session()
+        session.headers['User-Agent'] = USER_AGENT
+        session.headers['Cookie'] = COOKIES
 
-            # Create empty cache
-            if not os.path.isfile(self.cache_file):
-                self.write()
-
-            # Read cache
-            with open(self.cache_file, 'rb') as fh:
-                self.films = pickle.load(fh)
+        return session
 
 
-        # Retrieve element
-        def fetch(self, id):
-            # Return
-            return self.films[id]
-
-
-        # Check if element is cached
-        def is_cached(self, id):
-            # Look by element id
-            if id in self.films:
-                return True
-            else:
-                return False
-
-
-        # Write cache
-        def write(self, films={}):
-            # Write
-            with open(self.cache_file, 'wb') as fh:
-                pickle.dump(films, fh)
-
-    
     # Tools
     class Tools:
         # Get JSON data
         def get_json(self, url, session):
-            try:
-                data = json.loads(session.get(url).text)
-            except:
-                raise
-            else:
-                return data
+            data = json.loads(session.get(url).text)
+            
+            return data
 
 
         # Clean title
@@ -440,44 +358,25 @@ class NRKFilm:
             return (gmt + (tz * 3600))
 
 
-#
-# TESTING
-#
+        # Log
+        def log(self, message):
+            print '[\033[95mNRKFilm\033[0m] %s' % (message)
+
+        # Error
+        def catch_error(self, table, exception, message):
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+
+            table.add_row([
+                COLOR_GREEN + str(exc_tb.tb_lineno) + COLOR_RESET,
+                COLOR_CYAN + fname + COLOR_RESET,
+                COLOR_MAGENTA + str(exc_type) + COLOR_RESET,
+                COLOR_RED + str(exception) + COLOR_RESET,
+                COLOR_YELLOW + message + COLOR_RESET
+            ])
+
+
+
+# Testing
 if __name__ == '__main__':
     nrk = NRKFilm('/tmp/nrkcache', debug=True)
-
-    print '-'*100
-    print 'NRK tests'
-    print '-'*100
-    print 'Cache:', len(nrk.cache.films.keys())
-    print 'Films:', len(nrk.films.keys()), '(no new films found)' if len(nrk.cache.films.keys()) == len(nrk.films.keys()) else ''
-    print
-    print 'Available feature films'
-    print '-'*75
-
-    for film in nrk.feature_films():
-        print '*', film['nrk']['title']
-        print '-'*50
-        print '  > Title:\t', film['nrk']['title']
-        print '  > Org.Title:\t', film['nrk']['original_title']
-        print '  > Year:\t', film['nrk']['year']
-        print '  > Plot:\t', film['nrk']['description']
-        print '  > Poster:\t', film['nrk']['poster']
-        print '  > Fanart:\t', film['nrk']['fanart']
-        print '  > Stream:\t', film['nrk']['stream'][0:30], '...', film['nrk']['stream'][-20:]
-        print '  > Duration:\t', film['nrk']['duration']
-        print '  > Expires:\t', film['nrk']['expires'], '(Now:', str(int(time.time())) + ')'
-        print
-        if film['tmdb']:
-            print '  > Title:\t', film['tmdb']['title']
-            print '  > Org.Title:\t', film['tmdb']['original_title']
-            print '  > Year:\t', film['tmdb']['year']
-            print '  > Plot:\t', film['tmdb']['description']
-            print '  > Genre:\t', film['tmdb']['genre']
-            print '  > Director:\t', film['tmdb']['director']
-            print '  > Writer:\t', film['tmdb']['writer']
-            print '  > Cast:\t', film['tmdb']['cast']
-            print '  > Poster:\t', film['tmdb']['poster']
-            print '  > Fanart:\t', film['tmdb']['fanart']
-            print
-    print
