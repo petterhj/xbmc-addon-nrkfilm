@@ -56,9 +56,8 @@ class NRKFilm:
             
         # Logging
         self.results = PrettyTable([
-            'Element', 'Cached', 'Feature', 'Reason', 'Expires', 'Duration',
-            'Title', 'Year', 'Org.Title',
-            'T.Title', 'T.Year'
+            'Element', 'C', 'F', 'R', 'Expires', 'Dur.',
+            'Title', 'Org.Title', 'T.Title'
         ])
         self.results.align = 'l'
 
@@ -115,7 +114,6 @@ class NRKFilm:
                 else:
                     self.tools.log('Nothing to update')
                     
-
         # Errors
         print self.errors
 
@@ -138,7 +136,7 @@ class NRKFilm:
             self.tools.log('Found ' + str(len(elements)) + ' possible feature films')
 
             # Elements
-            for element in elements:
+            for element in elements[15:18]:
                 # Check if cached
                 if element in self.cache.films:
                     # Load from cache
@@ -180,7 +178,7 @@ class NRKFilm:
                                     film.nrk_plot       = self.tools.clean_plot(info['description'])
                                     film.nrk_backdrop   = URL_GFX % (info['image']['id'], 1920)
                                     film.nrk_stream     = info['mediaUrl'] if 'mediaUrl' in info else None
-                                    film.nrk_duration   = info['convivaStatistics']['contentLength'] if info['isAvailable'] else None,
+                                    film.nrk_duration   = info['convivaStatistics']['contentLength'] if info['isAvailable'] else film.nrk_duration
                                     film.nrk_expires    = self.tools.expiration(info['usageRights']['availableTo'])
 
                                     # TMDB metadata
@@ -204,11 +202,11 @@ class NRKFilm:
                                             film.tmdb_cast      = tmdb_meta['cast']
 
                                 else:
-                                    film.reason = 'Filtered'
+                                    film.reason = 'F' # Filtered
                             else:
-                                film.reason = 'Short'
+                                film.reason = 'S' # Short
                         else:
-                            film.reason = 'Not available'
+                            film.reason = 'N' # Not available
 
                 # Add to films
                 films[film.id] = film
@@ -217,20 +215,16 @@ class NRKFilm:
                 self.results.add_row([
                     # Element
                     COLOR_CYAN + film.id + COLOR_RESET, 
-                    COLOR_GREEN + 'True' + COLOR_RESET if element in self.cache.films else COLOR_BLUE + 'False' + COLOR_RESET,
-                    COLOR_GREEN + 'True' + COLOR_RESET if film.feature else COLOR_RED + 'False' + COLOR_RESET,
+                    COLOR_GREEN + 'T' + COLOR_RESET if element in self.cache.films else COLOR_BLUE + 'F' + COLOR_RESET,
+                    COLOR_GREEN + 'T' + COLOR_RESET if film.feature else COLOR_RED + 'F' + COLOR_RESET,
                     film.reason,
                     COLOR_YELLOW + datetime.datetime.fromtimestamp(film.nrk_expires).strftime('%d.%m.%y (%H:%M)') + COLOR_RESET if film.nrk_expires else '',
-                    COLOR_CYAN + str(film.nrk_duration[0]) + COLOR_RESET if film.nrk_duration > 0 else '',
-
+                    COLOR_CYAN + str(film.nrk_duration) + COLOR_RESET if film.nrk_duration > 0 else '',
 
                     # Meta
-                    film.nrk_title if film.nrk_title else '',
-                    film.nrk_year if film.nrk_year else '',
-                    film.nrk_org_title if film.nrk_org_title else '',
-
-                    film.tmdb_title if film.tmdb_title else '',
-                    film.tmdb_year if film.tmdb_year else ''
+                    '%s%s' % (film.nrk_title.decode('utf-8'), ' (' + film.nrk_year + ')' if film.nrk_year else ''),
+                    '%s' % (film.nrk_org_title if film.nrk_org_title else ''),
+                    '%s%s' % (film.tmdb_title if film.tmdb_title else '', ' (' + film.tmdb_year + ')' if film.tmdb_title else ''),
                 ])
 
             # Log: Results
